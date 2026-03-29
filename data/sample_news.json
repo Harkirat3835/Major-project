@@ -1,0 +1,145 @@
+{
+  "sample_news": [
+    {
+      "id": 1,
+      "title": "Government Announces New Economic Policy to Boost Growth",
+      "text": "The government today announced a comprehensive economic policy aimed at boosting growth and creating jobs. The new measures include tax incentives for businesses, infrastructure development projects, and increased funding for education and healthcare. Economic experts predict this could add 2% to GDP growth over the next year.",
+      "category": "politics",
+      "is_real": true,
+      "source": "Reuters"
+    },
+    {
+      "id": 2,
+      "title": "Aliens Land in New York City - Eyewitness Accounts",
+      "text": "In a shocking turn of events, multiple eyewitnesses report seeing unidentified flying objects landing in Central Park. According to sources, extraterrestrial beings emerged and began communicating with local residents. Authorities have cordoned off the area while scientists investigate.",
+      "category": "hoax",
+      "is_real": false,
+      "source": "Unknown"
+    },
+    {
+      "id": 3,
+      "title": "Stock Market Reaches All-Time High Amid Tech Rally",
+      "text": "The stock market closed at an all-time high today, driven by strong performance in technology stocks. Major indices gained over 1% as investors reacted positively to earnings reports from leading tech companies. Analysts remain cautiously optimistic about market conditions.",
+      "category": "business",
+      "is_real": true,
+      "source": "Bloomberg"
+    },
+    {
+      "id": 4,
+      "title": "Celebrity Announces Shocking Secret During Live Interview",
+      "text": "In a bombshell revelation during a live television interview, a major Hollywood celebrity admitted to having been replaced by a clone five years ago. The star claims the original was abducted and that they have been living in hiding ever since.",
+      "category": "entertainment",
+      "is_real": false,
+      "source": "Entertainment Weekly"
+    },
+    {
+      "id": 5,
+      "title": "New Scientific Breakthrough in Cancer Treatment",
+      "text": "Researchers at a leading medical institute have announced a breakthrough in cancer treatment using nanotechnology. The new therapy has shown remarkable results in clinical trials, with 90% of patients showing significant improvement. The treatment is expected to be available within two years.",
+      "category": "science",
+      "is_real": true,
+      "source": "Nature"
+    },
+    {
+      "id": 6,
+      "title": "World Ends Tomorrow - Ancient Prophecy Fulfilled",
+      "text": "According to an ancient Mayan prophecy that has been circulating on social media, the world will end tomorrow at exactly 3:14 PM. Experts from around the world have gathered to witness this historic event. Stock up on supplies and say goodbye to loved ones.",
+      "category": "doomsday",
+      "is_real": false,
+      "source": "Social Media"
+    },
+    {
+      "id": 7,
+      "title": "Climate Change Summit Reaches Historic Agreement",
+      "text": "World leaders at the annual climate change summit have reached a historic agreement to reduce carbon emissions by 50% within the next decade. The pact includes binding commitments from all major economies and establishes a global fund for climate adaptation.",
+      "category": "environment",
+      "is_real": true,
+      "source": "BBC News"
+    },
+    {
+      "id": 8,
+      "title": "Time Travel Device Invented by Amateur Scientist",
+      "text": "An amateur scientist from a small town has claimed to have invented a working time travel device. According to the inventor, the device can transport people up to 100 years into the past or future. Demonstrations are scheduled for next week.",
+      "category": "science fiction",
+      "is_real": false,
+      "source": "Local News"
+    },
+    {
+      "id": 9,
+      "title": "Major Bank Reports Record Quarterly Profits",
+      "text": "One of the world's largest banks reported record quarterly profits today, beating analyst expectations. The strong performance was attributed to increased lending activity and successful cost management initiatives. The bank also announced plans for share buybacks.",
+      "category": "business",
+      "is_real": true,
+      "source": "Financial Times"
+    },
+    {
+      "id": 10,
+      "title": "Zombie Apocalypse Begins in Rural Town",
+      "text": "Residents of a small rural town are fleeing after reports of people turning into zombies following exposure to an unknown chemical. Local authorities have declared a state of emergency and are working with federal agencies to contain the outbreak.",
+      "category": "horror",
+      "is_real": false,
+      "source": "Anonymous Blog"
+    },
+    {
+      "id": 11,
+      "title": "New Study Shows Benefits of Mediterranean Diet",
+      "text": "A comprehensive study published in a leading medical journal shows that following a Mediterranean diet can reduce the risk of heart disease by up to 30%. The research, which followed over 10,000 participants for 5 years, highlights the importance of diet in preventing chronic diseases.",
+      "category": "health",
+      "is_real": true,
+      "source": "Journal of the American Medical Association"
+    },
+    {
+      "id": 12,
+      "title": "Secret Society Controls World Governments",
+      "text": "An anonymous whistleblower has revealed that a secret society has been controlling world governments for centuries. According to leaked documents, the society includes world leaders, celebrities, and business magnates who meet in secret to plan global events.",
+      "category": "conspiracy",
+      "is_real": false,
+      "source": "Underground Network"
+    },
+    {
+      "id": 13,
+      "title": "Olympic Committee Announces 2024 Host City",
+      "text": "The International Olympic Committee has announced that Paris will host the 2024 Summer Olympics. The decision comes after a competitive bidding process that included several major cities. Preparations for the games will begin immediately.",
+      "category": "sports",
+      "is_real": true,
+      "source": "International Olympic Committee"
+    },
+    {
+      "id": 14,
+      "title": "Cure for Common Cold Discovered",
+      "text": "Scientists claim to have discovered a cure for the common cold that works in just 24 hours. The breakthrough treatment, which uses a combination of natural herbs and modern medicine, has been tested on thousands of volunteers with 100% success rate.",
+      "category": "health hoax",
+      "is_real": false,
+      "source": "Health Blog"
+    },
+    {
+      "id": 15,
+      "title": "SpaceX Successfully Launches Satellite Constellation",
+      "text": "SpaceX has successfully launched another batch of satellites for its Starlink internet constellation. The mission deployed 60 satellites into low Earth orbit, bringing the total number of operational satellites to over 2,000. The company continues to expand global internet coverage.",
+      "category": "technology",
+      "is_real": true,
+      "source": "SpaceX"
+    }
+  ],
+  "categories": [
+    "politics",
+    "business",
+    "science",
+    "entertainment",
+    "environment",
+    "sports",
+    "health",
+    "technology",
+    "hoax",
+    "conspiracy",
+    "doomsday",
+    "horror"
+  ],
+  "statistics": {
+    "total_articles": 15,
+    "real_articles": 8,
+    "fake_articles": 7,
+    "accuracy_rate": 95.2,
+    "average_confidence": 87.5
+  }
+}

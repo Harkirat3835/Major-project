@@ -1,0 +1,212 @@
+{
+  "sample_results": [
+    {
+      "id": 1,
+      "text": "Government announces new economic policy to boost growth and create jobs across multiple sectors.",
+      "prediction": "Real",
+      "confidence": 96.7,
+      "timestamp": "2024-01-15T10:30:00Z",
+      "processing_time": 0.234,
+      "user_feedback": null,
+      "reasons": []
+    },
+    {
+      "id": 2,
+      "text": "Aliens have landed in New York City and are communicating with world leaders in secret meetings.",
+      "prediction": "Fake",
+      "confidence": 89.3,
+      "timestamp": "2024-01-15T09:15:00Z",
+      "processing_time": 0.198,
+      "user_feedback": "correct",
+      "reasons": ["Unverified claims", "Sensational language", "No credible sources"]
+    },
+    {
+      "id": 3,
+      "text": "Stock market reaches all-time high as technology stocks lead gains of over 2%.",
+      "prediction": "Real",
+      "confidence": 94.1,
+      "timestamp": "2024-01-14T16:45:00Z",
+      "processing_time": 0.256,
+      "user_feedback": null,
+      "reasons": []
+    },
+    {
+      "id": 4,
+      "text": "Famous celebrity reveals they were replaced by a clone five years ago in shocking interview.",
+      "prediction": "Fake",
+      "confidence": 87.9,
+      "timestamp": "2024-01-14T14:20:00Z",
+      "processing_time": 0.312,
+      "user_feedback": "correct",
+      "reasons": ["Improbable claims", "Clickbait style", "No supporting evidence"]
+    },
+    {
+      "id": 5,
+      "text": "New scientific breakthrough in cancer treatment shows 90% success rate in clinical trials.",
+      "prediction": "Real",
+      "confidence": 98.2,
+      "timestamp": "2024-01-14T11:10:00Z",
+      "processing_time": 0.187,
+      "user_feedback": null,
+      "reasons": []
+    },
+    {
+      "id": 6,
+      "text": "World will end tomorrow according to ancient prophecy that has been circulating online.",
+      "prediction": "Fake",
+      "confidence": 92.4,
+      "timestamp": "2024-01-13T20:45:00Z",
+      "processing_time": 0.223,
+      "user_feedback": "correct",
+      "reasons": ["Doomsday predictions", "Social media origin", "Recurring hoax"]
+    },
+    {
+      "id": 7,
+      "text": "Climate change summit reaches historic agreement to reduce emissions by 50% in decade.",
+      "prediction": "Real",
+      "confidence": 95.8,
+      "timestamp": "2024-01-13T18:30:00Z",
+      "processing_time": 0.245,
+      "user_feedback": null,
+      "reasons": []
+    },
+    {
+      "id": 8,
+      "text": "Amateur scientist invents working time travel device capable of transporting people through time.",
+      "prediction": "Fake",
+      "confidence": 91.7,
+      "timestamp": "2024-01-13T15:15:00Z",
+      "processing_time": 0.289,
+      "user_feedback": "correct",
+      "reasons": ["Technologically impossible", "No scientific backing", "Amateur claims"]
+    },
+    {
+      "id": 9,
+      "text": "Major bank reports record quarterly profits exceeding analyst expectations by 15%.",
+      "prediction": "Real",
+      "confidence": 97.3,
+      "timestamp": "2024-01-12T14:00:00Z",
+      "processing_time": 0.201,
+      "user_feedback": null,
+      "reasons": []
+    },
+    {
+      "id": 10,
+      "text": "Zombie apocalypse begins in rural town after mysterious chemical spill turns residents violent.",
+      "prediction": "Fake",
+      "confidence": 88.6,
+      "timestamp": "2024-01-12T11:30:00Z",
+      "processing_time": 0.267,
+      "user_feedback": "correct",
+      "reasons": ["Horror fiction tropes", "Unrealistic scenario", "Anonymous sources"]
+    },
+    {
+      "id": 11,
+      "text": "New study shows Mediterranean diet reduces heart disease risk by 30% in large clinical trial.",
+      "prediction": "Real",
+      "confidence": 96.9,
+      "timestamp": "2024-01-11T16:20:00Z",
+      "processing_time": 0.234,
+      "user_feedback": null,
+      "reasons": []
+    },
+    {
+      "id": 12,
+      "text": "Secret society of world leaders controls global events from hidden underground facility.",
+      "prediction": "Fake",
+      "confidence": 85.4,
+      "timestamp": "2024-01-11T13:45:00Z",
+      "processing_time": 0.298,
+      "user_feedback": "correct",
+      "reasons": ["Conspiracy theory", "No evidence", "Anonymous whistleblower"]
+    },
+    {
+      "id": 13,
+      "text": "International Olympic Committee announces Paris as host city for 2024 Summer Games.",
+      "prediction": "Real",
+      "confidence": 99.1,
+      "timestamp": "2024-01-10T12:00:00Z",
+      "processing_time": 0.178,
+      "user_feedback": null,
+      "reasons": []
+    },
+    {
+      "id": 14,
+      "text": "Scientists discover cure for common cold that works in 24 hours with 100% success rate.",
+      "prediction": "Fake",
+      "confidence": 90.2,
+      "timestamp": "2024-01-10T09:30:00Z",
+      "processing_time": 0.245,
+      "user_feedback": "correct",
+      "reasons": ["Too good to be true", "No peer review", "Unrealistic claims"]
+    },
+    {
+      "id": 15,
+      "text": "SpaceX successfully launches 60 satellites for Starlink constellation, expanding global coverage.",
+      "prediction": "Real",
+      "confidence": 97.8,
+      "timestamp": "2024-01-09T08:15:00Z",
+      "processing_time": 0.212,
+      "user_feedback": null,
+      "reasons": []
+    },
+    {
+      "id": 16,
+      "text": "Local school implements new teaching method that guarantees students will get perfect grades.",
+      "prediction": "Fake",
+      "confidence": 83.7,
+      "timestamp": "2024-01-09T14:20:00Z",
+      "processing_time": 0.267,
+      "user_feedback": "correct",
+      "reasons": ["Impossible guarantee", "No educational backing", "Local claim only"]
+    },
+    {
+      "id": 17,
+      "text": "NASA confirms discovery of Earth-like planet in habitable zone of nearby star system.",
+      "prediction": "Real",
+      "confidence": 98.5,
+      "timestamp": "2024-01-08T11:45:00Z",
+      "processing_time": 0.189,
+      "user_feedback": null,
+      "reasons": []
+    },
+    {
+      "id": 18,
+      "text": "Eating chocolate every day prevents all diseases and extends lifespan by 50 years.",
+      "prediction": "Fake",
+      "confidence": 94.3,
+      "timestamp": "2024-01-08T10:10:00Z",
+      "processing_time": 0.223,
+      "user_feedback": "correct",
+      "reasons": ["Health myth", "Exaggerated claims", "No scientific evidence"]
+    },
+    {
+      "id": 19,
+      "text": "Federal reserve announces interest rate cut to stimulate economic growth amid inflation concerns.",
+      "prediction": "Real",
+      "confidence": 95.6,
+      "timestamp": "2024-01-07T15:30:00Z",
+      "processing_time": 0.234,
+      "user_feedback": null,
+      "reasons": []
+    },
+    {
+      "id": 20,
+      "text": "Ancient pyramid discovered under the ocean contains technology from alien civilization.",
+      "prediction": "Fake",
+      "confidence": 89.8,
+      "timestamp": "2024-01-07T12:45:00Z",
+      "processing_time": 0.278,
+      "user_feedback": "correct",
+      "reasons": ["Archaeological hoax", "Alien conspiracy", "No verification"]
+    }
+  ],
+  "summary_stats": {
+    "total_analyses": 20,
+    "real_news_count": 10,
+    "fake_news_count": 10,
+    "average_confidence": 93.2,
+    "average_processing_time": 0.238,
+    "user_feedback_rate": 0.6
+  }
+}

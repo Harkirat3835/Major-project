@@ -1,0 +1,143 @@
+{
+  "tips_data": [
+    {
+      "id": 1,
+      "title": "Check the Source",
+      "description": "Always verify the credibility of the news source. Established, reputable news organizations have a track record of accurate reporting.",
+      "examples": {
+        "reliable": ["BBC News", "Reuters", "Associated Press", "The New York Times", "The Guardian", "NPR"],
+        "questionable": ["Unknown websites", "Social media posts", "Anonymous blogs", "Clickbait sites", "Satire sites"]
+      },
+      "indicators": ["Professional design", "Contact information", "About page", "Editorial standards"]
+    },
+    {
+      "id": 2,
+      "title": "Look for Original Reporting",
+      "description": "Fake news often copies content from other sources without adding new information or context. Check if the article provides original reporting.",
+      "examples": {
+        "original": ["Direct quotes from sources", "On-site interviews", "Primary documents", "First-hand accounts"],
+        "copied": ["Reposted content", "No original sources", "Generic descriptions", "Stock photos"]
+      },
+      "indicators": ["Byline with real author", "Dateline", "Original photography", "Unique details"]
+    },
+    {
+      "id": 3,
+      "title": "Verify the Date",
+      "description": "Old news stories are sometimes recycled as current events. Always check the publication date and when the events actually occurred.",
+      "examples": {
+        "current": ["Today's date on article", "Recent timestamps", "Current event references"],
+        "outdated": ["Old photos", "References to past events", "Dated language", "Archived content"]
+      },
+      "indicators": ["Publication timestamp", "Last updated date", "Event timeline", "Related current news"]
+    },
+    {
+      "id": 4,
+      "title": "Check the Author",
+      "description": "Legitimate news articles have identifiable authors with credentials. Anonymous or pseudonymous authors should raise suspicion.",
+      "examples": {
+        "credible": ["Named journalist", "Author bio", "Previous articles", "Professional credentials"],
+        "suspicious": ["Anonymous author", "No bio", "Single article", "No credentials listed"]
+      },
+      "indicators": ["Author's full name", "Professional title", "Contact information", "Publication history"]
+    },
+    {
+      "id": 5,
+      "title": "Look for Bias and Balance",
+      "description": "Balanced reporting presents multiple perspectives. One-sided articles with strong emotional language may indicate bias or propaganda.",
+      "examples": {
+        "balanced": ["Multiple viewpoints", "Fact-based language", "Context provided", "Counterarguments included"],
+        "biased": ["Emotional language", "One-sided view", "Loaded terms", "No opposing views"]
+      },
+      "indicators": ["Neutral language", "Sources from both sides", "Fact-checking statements", "Contextual information"]
+    },
+    {
+      "id": 6,
+      "title": "Check for Supporting Evidence",
+      "description": "Real news is supported by evidence, data, and multiple sources. Fake news often makes claims without backing them up.",
+      "examples": {
+        "supported": ["Links to sources", "Data citations", "Expert quotes", "Official statements"],
+        "unsupported": ["Unverified claims", "No sources cited", "Anonymous tips", "Personal opinions"]
+      },
+      "indicators": ["Hyperlinked sources", "Data sources", "Official documents", "Multiple confirmations"]
+    },
+    {
+      "id": 7,
+      "title": "Watch for Sensational Headlines",
+      "description": "Clickbait headlines use exaggerated or shocking language to attract attention. Compare the headline with the actual content.",
+      "examples": {
+        "legitimate": ["'Government Announces New Policy'", "'Study Shows Health Benefits'", "'Company Reports Earnings'"],
+        "clickbait": ["'SHOCKING Truth Revealed!'", "'You Won't Believe This!'", "'This Changes Everything!'"]
+      },
+      "indicators": ["Accurate to content", "Professional tone", "Specific details", "No ALL CAPS"]
+    },
+    {
+      "id": 8,
+      "title": "Verify with Fact-Checking Sites",
+      "description": "Use reputable fact-checking organizations to verify claims, especially controversial or surprising information.",
+      "examples": {
+        "fact_checkers": ["Snopes", "FactCheck.org", "PolitiFact", "AP Fact Check", "Washington Post Fact Checker"],
+        "usage": ["Search for specific claims", "Check recent fact-checks", "Look for ratings", "Read explanations"]
+      },
+      "indicators": ["Independent verification", "Source analysis", "Evidence evaluation", "Clear conclusions"]
+    },
+    {
+      "id": 9,
+      "title": "Check for Image Authenticity",
+      "description": "Images can be manipulated or taken out of context. Reverse image search can help verify the origin and context of photos.",
+      "examples": {
+        "authentic": ["Original context matches", "Consistent with other sources", "Properly attributed", "Recent creation date"],
+        "manipulated": ["Out of context", "Edited or altered", "Stock photos misused", "Old images recycled"]
+      },
+      "indicators": ["Reverse image search", "Metadata check", "Source verification", "Context confirmation"]
+    },
+    {
+      "id": 10,
+      "title": "Be Skeptical of Viral Content",
+      "description": "Content that spreads rapidly on social media is often unverified. Take extra care with viral stories, memes, and videos.",
+      "examples": {
+        "verified": ["Confirmed by multiple sources", "Official statements", "Professional reporting", "Slow spread with verification"],
+        "viral_fake": ["Spreads too quickly", "Emotional appeals", "No source verification", "Chain messages"]
+      },
+      "indicators": ["Slow fact-checking", "Multiple confirmations", "Official sources", "Context preservation"]
+    }
+  ],
+  "common_fake_news_indicators": [
+    "Sensational or emotional language",
+    "Anonymous sources",
+    "Lack of supporting evidence",
+    "Conspiracy theories",
+    "Too good to be true claims",
+    "Outdated information",
+    "Poor grammar or spelling",
+    "No author credentials",
+    "Single source only",
+    "Pressure to share quickly"
+  ],
+  "verification_tools": [
+    {
+      "name": "Google Reverse Image Search",
+      "purpose": "Verify image authenticity and origin",
+      "url": "images.google.com"
+    },
+    {
+      "name": "TinEye",
+      "purpose": "Reverse image search engine",
+      "url": "tineye.com"
+    },
+    {
+      "name": "FactCheck.org",
+      "purpose": "Non-partisan fact-checking",
+      "url": "factcheck.org"
+    },
+    {
+      "name": "Snopes",
+      "purpose": "Urban legends and fact-checking",
+      "url": "snopes.com"
+    },
+    {
+      "name": "Media Bias/Fact Check",
+      "purpose": "Media credibility ratings",
+      "url": "mediabiasfactcheck.com"
+    }
+  ]
+}

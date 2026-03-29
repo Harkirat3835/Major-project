@@ -1,0 +1,26 @@
+[
+  {
+    "analysis_id": 1,
+    "user_id": 1,
+    "is_correct": true,
+    "user_correction": null,
+    "comment": "The prediction matched the article content.",
+    "submitted_at": "2026-03-29T10:15:30Z"
+  },
+  {
+    "analysis_id": 2,
+    "user_id": 2,
+    "is_correct": false,
+    "user_correction": "This article is actually real news.",
+    "comment": "I think the model mislabeled the source.",
+    "submitted_at": "2026-03-29T11:42:10Z"
+  },
+  {
+    "analysis_id": 3,
+    "user_id": 1,
+    "is_correct": true,
+    "user_correction": null,
+    "comment": "Good analysis and clear explanation.",
+    "submitted_at": "2026-03-29T12:08:01Z"
+  }
+]

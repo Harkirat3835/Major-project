@@ -1,0 +1,130 @@
+{
+  "team_members": [
+    {
+      "id": 1,
+      "name": "Dr. Sarah Chen",
+      "role": "Lead AI Researcher",
+      "bio": "PhD in Machine Learning with 8+ years experience in natural language processing and fake news detection algorithms.",
+      "email": "sarah.chen@fakenewsdetector.com",
+      "linkedin": "https://linkedin.com/in/sarahchen",
+      "image": "/static/images/team/sarah.jpg",
+      "expertise": ["Machine Learning", "NLP", "AI Ethics"]
+    },
+    {
+      "id": 2,
+      "name": "Michael Rodriguez",
+      "role": "Data Scientist",
+      "bio": "Masters in Data Science specializing in large-scale data processing and model training for classification tasks.",
+      "email": "michael.rodriguez@fakenewsdetector.com",
+      "linkedin": "https://linkedin.com/in/mrodriguez",
+      "image": "/static/images/team/michael.jpg",
+      "expertise": ["Data Processing", "Model Training", "Python"]
+    },
+    {
+      "id": 3,
+      "name": "Dr. Emily Watson",
+      "role": "Fact-Checking Specialist",
+      "bio": "Journalism professor and fact-checking expert with extensive experience in media literacy and misinformation research.",
+      "email": "emily.watson@fakenewsdetector.com",
+      "linkedin": "https://linkedin.com/in/emilywatson",
+      "image": "/static/images/team/emily.jpg",
+      "expertise": ["Fact-Checking", "Media Literacy", "Research"]
+    },
+    {
+      "id": 4,
+      "name": "David Kim",
+      "role": "Full-Stack Developer",
+      "bio": "Senior developer with expertise in web applications, APIs, and scalable cloud infrastructure.",
+      "email": "david.kim@fakenewsdetector.com",
+      "linkedin": "https://linkedin.com/in/davidkim",
+      "image": "/static/images/team/david.jpg",
+      "expertise": ["Web Development", "APIs", "Cloud Computing"]
+    },
+    {
+      "id": 5,
+      "name": "Lisa Thompson",
+      "role": "UX/UI Designer",
+      "bio": "Creative designer focused on user experience and interface design for complex data applications.",
+      "email": "lisa.thompson@fakenewsdetector.com",
+      "linkedin": "https://linkedin.com/in/lisathompson",
+      "image": "/static/images/team/lisa.jpg",
+      "expertise": ["UX Design", "UI Design", "User Research"]
+    }
+  ],
+  "contact_info": {
+    "general": {
+      "email": "info@fakenewsdetector.com",
+      "phone": "+1 (555) 123-4567",
+      "address": "123 Innovation Drive, Tech City, TC 12345, USA"
+    },
+    "support": {
+      "email": "support@fakenewsdetector.com",
+      "hours": "Monday - Friday, 9:00 AM - 6:00 PM EST"
+    },
+    "media": {
+      "email": "press@fakenewsdetector.com",
+      "phone": "+1 (555) 123-4568"
+    },
+    "partnerships": {
+      "email": "partnerships@fakenewsdetector.com"
+    }
+  },
+  "social_media": [
+    {
+      "platform": "Twitter",
+      "handle": "@FakeNewsDetect",
+      "url": "https://twitter.com/FakeNewsDetect",
+      "followers": "25.3K"
+    },
+    {
+      "platform": "LinkedIn",
+      "handle": "Fake News Detector Pro",
+      "url": "https://linkedin.com/company/fake-news-detector",
+      "followers": "12.8K"
+    },
+    {
+      "platform": "GitHub",
+      "handle": "fakenewsdetector",
+      "url": "https://github.com/fakenewsdetector",
+      "stars": "1.2K"
+    }
+  ],
+  "offices": [
+    {
+      "city": "San Francisco",
+      "country": "USA",
+      "address": "123 Innovation Drive, Tech City, CA 94105",
+      "phone": "+1 (555) 123-4567"
+    },
+    {
+      "city": "London",
+      "country": "UK",
+      "address": "45 Media Street, London EC1A 1BB",
+      "phone": "+44 20 7946 0123"
+    },
+    {
+      "city": "Toronto",
+      "country": "Canada",
+      "address": "789 Research Blvd, Toronto ON M5V 1A1",
+      "phone": "+1 (416) 555-0123"
+    }
+  ],
+  "faq": [
+    {
+      "question": "How accurate is the fake news detection?",
+      "answer": "Our AI model achieves over 95% accuracy on diverse datasets, with continuous improvements through user feedback and ongoing research."
+    },
+    {
+      "question": "Is my data secure and private?",
+      "answer": "Yes, we take privacy seriously. All analyses are processed securely, and we don't store personal information without explicit consent."
+    },
+    {
+      "question": "Can I use this for commercial purposes?",
+      "answer": "We offer various licensing options for commercial use. Please contact our partnerships team for more information."
+    },
+    {
+      "question": "How can I contribute to improving the system?",
+      "answer": "You can provide feedback on analyses, report issues, or contribute to our open-source projects on GitHub."
+    }
+  ]
+}

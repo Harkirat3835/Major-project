@@ -1,0 +1,101 @@
+{
+  "analytics_data": {
+    "daily_stats": [
+      {"date": "2024-01-01", "analyses": 145, "real": 89, "fake": 56, "accuracy": 94.2},
+      {"date": "2024-01-02", "analyses": 167, "real": 102, "fake": 65, "accuracy": 95.1},
+      {"date": "2024-01-03", "analyses": 134, "real": 78, "fake": 56, "accuracy": 93.8},
+      {"date": "2024-01-04", "analyses": 189, "real": 115, "fake": 74, "accuracy": 96.3},
+      {"date": "2024-01-05", "analyses": 156, "real": 94, "fake": 62, "accuracy": 94.7},
+      {"date": "2024-01-06", "analyses": 178, "real": 108, "fake": 70, "accuracy": 95.4},
+      {"date": "2024-01-07", "analyses": 142, "real": 86, "fake": 56, "accuracy": 94.1}
+    ],
+    "category_breakdown": [
+      {"category": "Politics", "count": 245, "real": 156, "fake": 89, "percentage": 24.5},
+      {"category": "Business", "count": 198, "real": 134, "fake": 64, "percentage": 19.8},
+      {"category": "Technology", "count": 167, "real": 123, "fake": 44, "percentage": 16.7},
+      {"category": "Health", "count": 145, "real": 98, "fake": 47, "percentage": 14.5},
+      {"category": "Entertainment", "count": 134, "real": 87, "fake": 47, "percentage": 13.4},
+      {"category": "Sports", "count": 111, "real": 89, "fake": 22, "percentage": 11.1}
+    ],
+    "confidence_distribution": [
+      {"range": "90-100%", "count": 456, "percentage": 45.6},
+      {"range": "80-89%", "count": 312, "percentage": 31.2},
+      {"range": "70-79%", "count": 156, "percentage": 15.6},
+      {"range": "60-69%", "count": 67, "percentage": 6.7},
+      {"range": "50-59%", "count": 9, "percentage": 0.9}
+    ],
+    "user_feedback": {
+      "total_feedback": 387,
+      "correct_predictions": 356,
+      "incorrect_predictions": 31,
+      "accuracy_rate": 92.0,
+      "feedback_breakdown": [
+        {"type": "Real correctly identified", "count": 178, "percentage": 46.0},
+        {"type": "Fake correctly identified", "count": 178, "percentage": 46.0},
+        {"type": "False positive (Real marked as Fake)", "count": 18, "percentage": 4.7},
+        {"type": "False negative (Fake marked as Real)", "count": 13, "percentage": 3.3}
+      ]
+    },
+    "processing_stats": {
+      "average_response_time": 0.245,
+      "median_response_time": 0.223,
+      "min_response_time": 0.156,
+      "max_response_time": 0.456,
+      "response_time_distribution": [
+        {"range": "0-0.2s", "count": 423, "percentage": 42.3},
+        {"range": "0.2-0.3s", "count": 345, "percentage": 34.5},
+        {"range": "0.3-0.4s", "count": 167, "percentage": 16.7},
+        {"range": "0.4-0.5s", "count": 65, "percentage": 6.5}
+      ]
+    },
+    "geographic_data": [
+      {"country": "United States", "analyses": 456, "percentage": 45.6},
+      {"country": "United Kingdom", "analyses": 123, "percentage": 12.3},
+      {"country": "Canada", "analyses": 98, "percentage": 9.8},
+      {"country": "Australia", "analyses": 87, "percentage": 8.7},
+      {"country": "Germany", "analyses": 76, "percentage": 7.6},
+      {"country": "India", "analyses": 65, "percentage": 6.5},
+      {"country": "Others", "analyses": 95, "percentage": 9.5}
+    ],
+    "model_performance": {
+      "overall_accuracy": 94.8,
+      "precision_real": 96.2,
+      "precision_fake": 93.1,
+      "recall_real": 95.8,
+      "recall_fake": 93.7,
+      "f1_score": 94.7,
+      "training_data_size": 40000,
+      "test_data_size": 10000,
+      "last_trained": "2024-01-01",
+      "model_version": "2.1.0"
+    }
+  },
+  "charts_config": {
+    "daily_analyses": {
+      "type": "line",
+      "title": "Daily Analysis Volume",
+      "x_axis": "Date",
+      "y_axis": "Number of Analyses",
+      "colors": ["#667eea", "#764ba2"]
+    },
+    "prediction_distribution": {
+      "type": "pie",
+      "title": "Real vs Fake News Distribution",
+      "colors": ["#4CAF50", "#f44336"]
+    },
+    "category_breakdown": {
+      "type": "bar",
+      "title": "Analysis by Category",
+      "x_axis": "Category",
+      "y_axis": "Number of Articles",
+      "colors": ["#2196F3", "#FF9800", "#9C27B0", "#4CAF50", "#FF5722", "#795548"]
+    },
+    "confidence_histogram": {
+      "type": "bar",
+      "title": "Confidence Score Distribution",
+      "x_axis": "Confidence Range",
+      "y_axis": "Number of Predictions",
+      "colors": ["#667eea"]
+    }
+  }
+}
