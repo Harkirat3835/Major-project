@@ -1,5 +1,5 @@
-# Fake News Detector - Complete Startup Script
-# This script sets up and runs the entire project in one go
+# TruthLens - AI Fake News Detection - Complete Startup Script
+# Professional startup script for TruthLens platform
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $frontendDir = Join-Path $root 'frontend'
@@ -7,8 +7,9 @@ $venvPath = Join-Path $root '.venv'
 $venvActivate = Join-Path $venvPath 'Scripts\Activate.ps1'
 
 Write-Host "=====================================================================" -ForegroundColor Cyan
-Write-Host "     Fake News Detector - Professional Edition" -ForegroundColor Cyan
-Write-Host "               Complete Setup & Launch" -ForegroundColor Cyan
+Write-Host "                    TruthLens AI" -ForegroundColor Cyan
+Write-Host "           Professional Fake News Detection" -ForegroundColor Cyan
+Write-Host "                    Complete Launch" -ForegroundColor Cyan
 Write-Host "=====================================================================" -ForegroundColor Cyan
 Write-Host ""
 
