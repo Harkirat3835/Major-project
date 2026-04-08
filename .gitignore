@@ -133,6 +133,8 @@ dmypy.json
 .idea/
 *.swp
 *.swo
+*.ipynb
+instance/dev.db
 
 # OS
 .DS_Store

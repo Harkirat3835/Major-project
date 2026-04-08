@@ -6,6 +6,7 @@ flask-migrate==4.0.5
 flask-restx==1.2.0
 flask-limiter==3.5.0
 flask-caching==2.1.0
+flask-mail==0.9.1
 redis==5.0.1
 celery==5.3.4
 nltk==3.8.1

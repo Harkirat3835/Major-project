@@ -56,47 +56,28 @@ A comprehensive, enterprise-grade fake news detection system built with Flask, f
 
 ## 🚀 Quick Start
 
-### Windows (PowerShell - Recommended)
+### Quick Start (Recommended)
 ```powershell
-# Run both backend and frontend automatically
-.\run_project.ps1
-
-# Run only backend (Flask + HTML templates)
-.\run_project.ps1 -BackendOnly
-
-# Run only frontend (React application)
-.\run_project.ps1 -FrontendOnly
-
-# Run without opening browser
-.\run_project.ps1 -NoBrowser
+.\start.ps1
 ```
 
-### Windows (Batch File)
-```batch
-# Run both applications
-run_project.bat
+This unified script handles:
+- Python venv + deps
+- Frontend npm install + build
+- Flask server start
 
-# Run only backend
-run_project.bat backend
-
-# Run only frontend
-run_project.bat frontend
-```
-
-### Linux/macOS (Shell Script)
+### Manual Backend (Flask)
 ```bash
-# Make executable (first time only)
-chmod +x run_project.sh
-
-# Run both applications
-./run_project.sh
-
-# Run only backend
-./run_project.sh backend
-
-# Run only frontend
-./run_project.sh frontend
+python run.py
 ```
+Access: http://localhost:5000
+
+### Manual Frontend Dev
+```bash
+cd frontend
+npm run dev
+```
+Access: http://localhost:5173
 
 ### Manual Setup
 

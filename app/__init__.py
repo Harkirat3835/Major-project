@@ -6,6 +6,7 @@ from flask_restx import Api
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_caching import Cache
+from flask_mail import Mail
 from prometheus_flask_exporter import PrometheusMetrics
 import os
 
@@ -16,6 +17,7 @@ db = SQLAlchemy()
 jwt = JWTManager()
 cache = Cache()
 limiter = Limiter(key_func=get_remote_address)
+mail = Mail()
 metrics = PrometheusMetrics(app=None)
 
 def create_app(config_name=None):
@@ -28,15 +30,26 @@ def create_app(config_name=None):
     app.config.from_object(config)
 
     # Initialize extensions
-    CORS(app)
+    CORS(app, supports_credentials=True)
     db.init_app(app)
     jwt.init_app(app)
+    
+    # Cache initialization
     try:
         cache.init_app(app, config={'CACHE_TYPE': 'redis', 'CACHE_REDIS_URL': app.config['REDIS_URL']})
+        app.logger.info("Redis cache initialized successfully")
     except Exception as cache_error:
         app.logger.warning(f"Redis cache init failed: {cache_error}. Falling back to simple cache.")
         cache.init_app(app, config={'CACHE_TYPE': 'SimpleCache'})
+    
     limiter.init_app(app)
+    mail.init_app(app)
+    
+    # Custom rate limit storage if Redis available
+    if app.config.get('REDIS_URL'):
+        from flask_limiter import storage
+        from redis import Redis
+        limiter.storage = storage.RedisStorage(Redis.from_url(app.config['REDIS_URL']))
 
     # Initialize Prometheus metrics
     metrics.init_app(app)
@@ -44,6 +57,17 @@ def create_app(config_name=None):
     # Register blueprints
     from .routes import api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
+
+    # Health check
+    @app.route('/health')
+    def health():
+        return {
+            'status': 'healthy',
+            'auth': 'ready',
+            'mail': bool(app.config.get('MAIL_USERNAME')),
+            'db': True,
+            'cache': cache.config['CACHE_TYPE']
+        }
 
     # Serve static files
     from flask import send_from_directory
@@ -54,20 +78,14 @@ def create_app(config_name=None):
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
     def serve_spa(path: str):
-        if path.startswith('api') or path.startswith('assets'):
+        if path.startswith('api/') or path.startswith('assets/'):
             abort(404)
         return send_from_directory(app.static_folder, 'index.html')
 
-    # Create database tables
+    # Create database tables and seed data
     with app.app_context():
         db.create_all()
         seed_demo_users(app)
-
-    return app
-
-    # Create database tables
-    with app.app_context():
-        db.create_all()
-        seed_demo_users(app)
+        app.logger.info("Database initialized and demo users seeded")
 
     return app

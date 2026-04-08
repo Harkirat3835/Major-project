@@ -1,5 +1,6 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
+from flask_limiter.decorators import limit
 from flask_restx import Api, Resource, fields, Namespace
 from sqlalchemy import or_
 from .ml_model import (
@@ -10,7 +11,7 @@ from .ml_model import (
     classify_input_source,
 )
 from .models import db, User, Analysis, Feedback
-from . import cache
+from . import cache, limiter
 import hashlib
 import time
 import logging
@@ -80,48 +81,105 @@ feedback_model = api.model('Feedback', {
 
 @auth_ns.route('/register')
 class Register(Resource):
+    @limit("3 per hour", key_func=get_remote_address)
     @api.expect(user_model)
-    @api.response(201, 'User created successfully')
+    @api.response(201, 'User registered - check email to verify')
     @api.response(400, 'Validation error')
+    @api.response(409, 'User already exists')
+    @api.response(429, 'Rate limit exceeded')
     def post(self):
-        """Register a new user"""
+        """Register new user with password policy and email verification"""
         try:
             data = request.get_json(silent=True) or {}
             username = data.get('username') or data.get('name')
             email = data.get('email')
             password = data.get('password')
 
-            if not username or not email or not password:
-                return {'error': 'Missing required fields'}, 400
+            if not all([username, email, password]):
+                return {'error': 'Username, email, and password are required'}, 400
+
+            if len(username.strip()) < 3:
+                return {'error': 'Username must be at least 3 characters'}, 400
+
+            if '@' not in email or '.' not in email:
+                return {'error': 'Valid email address required'}, 400
 
             if User.query.filter_by(username=username).first():
-                return {'error': 'Username already exists'}, 400
+                return {'error': 'Username already exists'}, 409
 
             if User.query.filter_by(email=email).first():
-                return {'error': 'Email already exists'}, 400
+                return {'error': 'Email already registered'}, 409
 
-            user = User(username=username, email=email)
+            # Password policy validation
+            policy = current_app.config
+            if len(password) < policy['PASSWORD_MIN_LENGTH']:
+                return {
+                    'error': f'Password must be at least {policy["PASSWORD_MIN_LENGTH"]} characters',
+                    'policy': {
+                        'min_length': policy['PASSWORD_MIN_LENGTH'],
+                        'requires_uppercase': policy['PASSWORD_REQUIRE_UPPERCASE'],
+                        'requires_lowercase': policy['PASSWORD_REQUIRE_LOWERCASE'],
+                        'requires_digit': policy['PASSWORD_REQUIRE_DIGIT'],
+                        'requires_special': policy['PASSWORD_REQUIRE_SPECIAL']
+                    }
+                }, 400
+
+            import re
+            if policy['PASSWORD_REQUIRE_UPPERCASE'] and not re.search(r'[A-Z]', password):
+                return {'error': 'Password must contain uppercase letter'}, 400
+            if policy['PASSWORD_REQUIRE_LOWERCASE'] and not re.search(r'[a-z]', password):
+                return {'error': 'Password must contain lowercase letter'}, 400
+            if policy['PASSWORD_REQUIRE_DIGIT'] and not re.search(r'\d', password):
+                return {'error': 'Password must contain digit'}, 400
+            if policy['PASSWORD_REQUIRE_SPECIAL'] and not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+                return {'error': 'Password must contain special character (!@#$%^&*(),.?\":{}|<>)'}, 400
+
+            user = User(username=username.strip(), email=email.strip())
             user.set_password(password)
 
+            # Generate email verification token
+            verification_token = user.generate_verification_token()
             db.session.add(user)
             db.session.commit()
 
-            return {'message': 'User created successfully', 'user': user.to_dict()}, 201
+            # Send verification email (async in production)
+            try:
+                from flask_mail import Message
+                msg = Message(
+                    subject='Verify your TruthLens account',
+                    recipients=[user.email],
+                    body=f'Please verify your email by visiting: http://localhost:5000/api/auth/verify-email/{verification_token}\n\nThis link expires in 24 hours.',
+                    sender=current_app.config['MAIL_DEFAULT_SENDER']
+                )
+                mail.send(msg)
+                logger.info(f"Verification email sent to {user.email}")
+            except Exception as mail_error:
+                logger.error(f"Failed to send verification email: {mail_error}")
+
+            return {
+                'message': 'Account created successfully. Please check your email to verify your account.',
+                'user': user.to_dict(),
+                'next_step': 'Verify your email before logging in'
+            }, 201
 
         except Exception as e:
             logger.error(f"Registration error: {str(e)}")
-            return {'error': 'Registration failed'}, 500
+            db.session.rollback()
+            return {'error': 'Registration failed. Please try again.'}, 500
 
 @auth_ns.route('/login')
 class Login(Resource):
+    @limit("5 per 5 minutes", key_func=get_remote_address)
     @api.expect(api.model('Login', {
         'login': fields.String(required=True, description='Username or email'),
         'password': fields.String(required=True, description='Password')
     }))
     @api.response(200, 'Login successful')
-    @api.response(401, 'Invalid credentials')
+    @api.response(400, 'Validation error')
+    @api.response(401, 'Invalid credentials or account locked')
+    @api.response(429, 'Rate limit exceeded')
     def post(self):
-        """Authenticate user and return JWT token"""
+        """Authenticate user with lockout protection and refresh tokens"""
         try:
             data = request.get_json(silent=True) or {}
             login_value = data.get('login') or data.get('username')
@@ -134,13 +192,53 @@ class Login(Resource):
                 or_(User.username == login_value, User.email == login_value)
             ).first()
 
-            if user and user.check_password(password):
-                access_token = create_access_token(identity=user.id)
+            if not user:
+                logger.warning(f"Login attempt for non-existent user: {login_value}")
+                return {'error': 'Invalid credentials'}, 401
+
+            if user.is_locked():
+                remaining = (user.locked_until - datetime.utcnow()).total_seconds() / 60
+                return {
+                    'error': f'Account locked due to too many failed attempts. Try again in {remaining:.0f} minutes.'
+                }, 401
+
+            if not user.email_verified:
+                return {'error': 'Please verify your email before logging in. Resend link sent to your email.'}, 401
+                
+            if user.check_password(password):
+                user.reset_failed_logins()
+                db.session.commit()
+                
+                # Create access and refresh tokens
+                from flask_jwt_extended import create_refresh_token
+                access_token = create_access_token(
+                    identity=user.id,
+                    expires_delta=timedelta(seconds=current_app.config['JWT_ACCESS_TOKEN_EXPIRES'])
+                )
+                refresh_token = create_refresh_token(
+                    identity=user.id,
+                    expires_delta=timedelta(seconds=current_app.config['JWT_REFRESH_TOKEN_EXPIRES'])
+                )
+                
+                # Securely store refresh token hash
+                user.set_refresh_token(refresh_token)
+                db.session.commit()
+                
                 return {
                     'access_token': access_token,
-                    'user': user.to_dict()
+                    'refresh_token': refresh_token,
+                    'user': user.to_dict(),
+                    'token_type': 'Bearer'
                 }, 200
 
+            # Failed login
+            user.increment_failed_login()
+            db.session.commit()
+            
+            logger.warning(f"Failed login attempt for user: {login_value} (attempts: {user.failed_logins})")
+            if user.is_locked():
+                logger.warning(f"User {login_value} locked due to excessive failed logins")
+            
             return {'error': 'Invalid credentials'}, 401
 
         except Exception as e:
@@ -150,6 +248,7 @@ class Login(Resource):
 @auth_ns.route('/verify')
 class Verify(Resource):
     @jwt_required()
+    @limit("60 per minute", key_func=get_remote_address)
     @api.response(200, 'Token verified')
     @api.response(401, 'Invalid token')
     def get(self):
@@ -160,6 +259,120 @@ class Verify(Resource):
         user_data = user.to_dict()
         user_data['name'] = user.username
         return {'user': user_data}, 200
+
+@auth_ns.route('/refresh')
+class Refresh(Resource):
+    @jwt_required(refresh=True)
+    @limit("20 per hour", key_func=get_remote_address)
+    @api.response(200, 'Tokens refreshed')
+    @api.response(401, 'Invalid refresh token')
+    def post(self):
+        """Refresh access token using refresh token with rotation"""
+        try:
+            current_user_id = get_jwt_identity()
+            user = User.query.get_or_404(current_user_id)
+            
+            refresh_token = request.json.get('refresh_token') if request.is_json else None
+            
+            if not refresh_token or not user.verify_refresh_token(refresh_token):
+                return {'error': 'Invalid refresh token'}, 401
+            
+            # Rotate tokens - generate new ones
+            from flask_jwt_extended import create_access_token, create_refresh_token
+            new_access_token = create_access_token(
+                identity=user.id,
+                expires_delta=timedelta(seconds=current_app.config['JWT_ACCESS_TOKEN_EXPIRES'])
+            )
+            new_refresh_token = create_refresh_token(
+                identity=user.id,
+                expires_delta=timedelta(seconds=current_app.config['JWT_REFRESH_TOKEN_EXPIRES'])
+            )
+            
+            # Store new refresh token hash (single-use old token)
+            user.set_refresh_token(new_refresh_token)
+            db.session.commit()
+            
+            return {
+                'access_token': new_access_token,
+                'refresh_token': new_refresh_token,
+                'token_type': 'Bearer',
+                'expires_in': current_app.config['JWT_ACCESS_TOKEN_EXPIRES']
+            }, 200
+            
+        except Exception as e:
+            logger.error(f"Token refresh error: {str(e)}")
+            return {'error': 'Token refresh failed'}, 500
+
+@auth_ns.route('/verify-email/<token>')
+class VerifyEmail(Resource):
+    @limit("10 per hour", key_func=get_remote_address)
+    @api.response(200, 'Email verified')
+    @api.response(400, 'Invalid or expired token')
+    def post(self, token):
+        """Verify email using token"""
+        try:
+            user = User.query.filter_by(email_verification_token=token).first()
+            if not user:
+                return {'error': 'Invalid verification token'}, 400
+            
+            if user.email_verified:
+                return {'message': 'Email already verified'}, 200
+            
+            # Simple expiry check (24 hours from token generation)
+            from datetime import timedelta
+            if user.updated_at < datetime.utcnow() - timedelta(hours=24):
+                return {'error': 'Verification token expired. Please register again.'}, 400
+            
+            user.email_verified = True
+            user.email_verification_token = None
+            db.session.commit()
+            
+            return {
+                'message': 'Email verified successfully. You can now log in.',
+                'user': user.to_dict()
+            }, 200
+            
+        except Exception as e:
+            logger.error(f"Email verification error: {str(e)}")
+            return {'error': 'Verification failed'}, 500
+
+@auth_ns.route('/verify-email/resend')
+class ResendVerification(Resource):
+    @jwt_required()
+    @limit("5 per hour", key_func=lambda: get_jwt_identity())
+    @api.response(200, 'Verification email resent')
+    @api.response(400, 'Email already verified')
+    def post(self):
+        """Resend verification email"""
+        try:
+            user_id = get_jwt_identity()
+            user = User.query.get_or_404(user_id)
+            
+            if user.email_verified:
+                return {'error': 'Email already verified'}, 400
+            
+            verification_token = user.generate_verification_token()
+            db.session.commit()
+            
+            # Send email
+            try:
+                from flask_mail import Message
+                msg = Message(
+                    subject='Verify your TruthLens account',
+                    recipients=[user.email],
+                    body=f'Please verify your email by visiting: http://localhost:5000/api/auth/verify-email/{verification_token}\n\nThis link expires in 24 hours.',
+                    sender=current_app.config['MAIL_DEFAULT_SENDER']
+                )
+                mail.send(msg)
+                logger.info(f"Resent verification email to {user.email}")
+            except Exception as mail_error:
+                logger.error(f"Failed to resend verification email: {mail_error}")
+            
+            return {'message': 'Verification email resent successfully'}, 200
+            
+        except Exception as e:
+            logger.error(f"Resend verification error: {str(e)}")
+            return {'error': 'Failed to resend email'}, 500
 
 @analysis_ns.route('/')
 class AnalysisList(Resource):
