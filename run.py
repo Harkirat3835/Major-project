@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Fake News Detection API - Main Application Entry Point
+TruthLens AI - Main Application Entry Point
+AI-powered fake news detection platform
 """
 
 import os
@@ -29,9 +30,11 @@ def main():
     port = int(os.environ.get('PORT', 5000))
     host = os.environ.get('HOST', '0.0.0.0')
 
-    print(f"Starting Fake News Detection API on http://{host}:{port}")
-    print("API Documentation: http://localhost:5000/api/")
-    print("Health Check: http://localhost:5000/api/health")
+    print(f"🚀 Starting TruthLens AI on http://{host}:{port}")
+    print("📚 API Documentation: http://localhost:5000/api/")
+    print("❤️  Health Check: http://localhost:5000/api/health")
+    print("🔐 Demo Login: admin@truthguard.ai / Admin@1234!")
+    print("💡 Secure auth with email verification & password reset")
 
     app.run(host=host, port=port, debug=os.environ.get('FLASK_DEBUG', 'False').lower() == 'true')
 
