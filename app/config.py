@@ -6,7 +6,7 @@ load_dotenv()
 
 class Config:
     """Base configuration"""
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+SECRET_KEY = os.environ.get('SECRET_KEY') or os.environ.get('SECRET_KEY', 'dev-secret-DO_NOT_USE_IN_PROD-a1b2c3d4e5f6')
     DEBUG = False
     TESTING = False
 
@@ -15,7 +15,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # JWT - Enhanced with refresh tokens
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'jwt-secret-key-change-in-production')
+JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or os.environ.get('JWT_SECRET_KEY', 'jwt-dev-DO_NOT_USE_IN_PROD-x9y8z7w6v5')
     JWT_ACCESS_TOKEN_EXPIRES = 30 * 60  # 30 minutes in seconds
     JWT_REFRESH_TOKEN_EXPIRES = 7 * 24 * 60 * 60  # 7 days in seconds
 

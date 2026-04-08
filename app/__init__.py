@@ -3,6 +3,7 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_restx import Api
+from .security_middleware import security_headers, security_wrapper
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_caching import Cache
@@ -75,12 +76,15 @@ def create_app(config_name=None):
     def serve_static(filename):
         return send_from_directory(app.static_folder, f'assets/{filename}')
 
-    @app.route('/', defaults={'path': ''})
-    @app.route('/<path:path>')
-    def serve_spa(path: str):
-        if path.startswith('api/') or path.startswith('assets/'):
-            abort(404)
-        return send_from_directory(app.static_folder, 'index.html')
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+@security_wrapper
+def serve_spa(path: str):
+    if path.startswith('api/') or path.startswith('assets/'):
+        abort(404)
+    response = send_from_directory(app.static_folder, 'index.html')
+    response.headers.update(security_headers())
+    return response
 
     # Create database tables and seed data
     with app.app_context():
