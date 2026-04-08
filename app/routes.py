@@ -1,7 +1,14 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
 from flask_restx import Api, Resource, fields, Namespace
-from .ml_model import load_model, predict_news, analyze_fake_indicators
+from sqlalchemy import or_
+from .ml_model import (
+    load_model,
+    predict_news,
+    analyze_fake_indicators,
+    extract_text_from_url,
+    classify_input_source,
+)
 from .models import db, User, Analysis, Feedback
 from . import cache
 import hashlib
@@ -59,7 +66,9 @@ user_model = api.model('User', {
 })
 
 analysis_model = api.model('Analysis', {
-    'text': fields.String(required=True, description='News article text to analyze')
+    'text': fields.String(description='News article text to analyze'),
+    'url': fields.String(description='URL to verify'),
+    'source_type': fields.String(description='Optional source type: article, social_media, url'),
 })
 
 feedback_model = api.model('Feedback', {
@@ -78,17 +87,21 @@ class Register(Resource):
         """Register a new user"""
         try:
             data = request.get_json(silent=True) or {}
-            if not data or 'username' not in data or 'email' not in data or 'password' not in data:
+            username = data.get('username') or data.get('name')
+            email = data.get('email')
+            password = data.get('password')
+
+            if not username or not email or not password:
                 return {'error': 'Missing required fields'}, 400
 
-            if User.query.filter_by(username=data['username']).first():
+            if User.query.filter_by(username=username).first():
                 return {'error': 'Username already exists'}, 400
 
-            if User.query.filter_by(email=data['email']).first():
+            if User.query.filter_by(email=email).first():
                 return {'error': 'Email already exists'}, 400
 
-            user = User(username=data['username'], email=data['email'])
-            user.set_password(data['password'])
+            user = User(username=username, email=email)
+            user.set_password(password)
 
             db.session.add(user)
             db.session.commit()
@@ -102,8 +115,8 @@ class Register(Resource):
 @auth_ns.route('/login')
 class Login(Resource):
     @api.expect(api.model('Login', {
-        'username': fields.String(required=True),
-        'password': fields.String(required=True)
+        'login': fields.String(required=True, description='Username or email'),
+        'password': fields.String(required=True, description='Password')
     }))
     @api.response(200, 'Login successful')
     @api.response(401, 'Invalid credentials')
@@ -111,12 +124,17 @@ class Login(Resource):
         """Authenticate user and return JWT token"""
         try:
             data = request.get_json(silent=True) or {}
-            if not data or 'username' not in data or 'password' not in data:
-                return {'error': 'Missing username or password'}, 400
+            login_value = data.get('login') or data.get('username')
+            password = data.get('password')
 
-            user = User.query.filter_by(username=data['username']).first()
+            if not login_value or not password:
+                return {'error': 'Missing username/email or password'}, 400
 
-            if user and user.check_password(data['password']):
+            user = User.query.filter(
+                or_(User.username == login_value, User.email == login_value)
+            ).first()
+
+            if user and user.check_password(password):
                 access_token = create_access_token(identity=user.id)
                 return {
                     'access_token': access_token,
@@ -128,6 +146,20 @@ class Login(Resource):
         except Exception as e:
             logger.error(f"Login error: {str(e)}")
             return {'error': 'Login failed'}, 500
+
+@auth_ns.route('/verify')
+class Verify(Resource):
+    @jwt_required()
+    @api.response(200, 'Token verified')
+    @api.response(401, 'Invalid token')
+    def get(self):
+        user = User.query.get(get_jwt_identity())
+        if not user:
+            return {'error': 'User not found'}, 404
+
+        user_data = user.to_dict()
+        user_data['name'] = user.username
+        return {'user': user_data}, 200
 
 @analysis_ns.route('/')
 class AnalysisList(Resource):
@@ -157,15 +189,33 @@ class Predict(Resource):
             start_time = time.time()
             data = request.get_json(silent=True) or {}
 
-            if 'text' not in data:
-                return {'error': 'Missing text field'}, 400
+            text = str(data.get('text', '') or '').strip()
+            url = str(data.get('url', '') or '').strip()
+            source_type = str(data.get('source_type', '') or '').strip().lower() or None
 
-            text = str(data['text']).strip()
+            if not text and not url:
+                return {'error': 'Please provide article text or a URL to analyze.'}, 400
+
+            if not url and text and classify_input_source(text) == 'url':
+                url = text
+                text = ''
+
+            if url:
+                try:
+                    text = extract_text_from_url(url)
+                except Exception as fetch_error:
+                    logger.warning(f"URL extraction failed: {fetch_error}")
+                    return {
+                        'error': 'Unable to extract content from the URL. Please provide article text directly or verify the URL.'
+                    }, 400
+                source_type = 'url'
+
             if not text:
-                return {'error': 'Text cannot be empty'}, 400
+                return {'error': 'No analysis text available after extraction.'}, 400
 
-            # Check cache first
-            text_hash = hashlib.sha256(text.encode()).hexdigest()
+            source_type = source_type or classify_input_source(text)
+            text_hash = hashlib.sha256((url or text).encode()).hexdigest()
+
             cached_result = None
             try:
                 cached_result = cache.get(f"analysis:{text_hash}")
@@ -176,29 +226,28 @@ class Predict(Resource):
                 logger.info("Returning cached analysis result")
                 return cached_result, 200
 
-            # Load model and make prediction
             model, vectorizer = load_model()
-            result = predict_news(model, vectorizer, text)
+            result = predict_news(model, vectorizer, text, source_type=source_type)
 
-            # Analyze reasons if fake news
             reasons = []
             if result['prediction'] == 'Fake':
-                reasons = analyze_fake_indicators(text)
+                reasons = analyze_fake_indicators(text, source_type=source_type)
 
             result['reasons'] = reasons
+            result['source_type'] = source_type
+            result['source_url'] = url if url else None
+            result['text_preview'] = text[:280] + ('...' if len(text) > 280 else '')
 
-            # Calculate processing time
             processing_time = (time.time() - start_time) * 1000
             result['processing_time'] = round(processing_time, 2)
 
-            # Save to database
             analysis = Analysis(
                 user_id=get_jwt_identity(),
                 text_hash=text_hash,
                 text_length=len(text.split()),
                 prediction=result['prediction'],
                 confidence=result.get('confidence'),
-                reasons=str(reasons) if reasons else None,
+                reasons=json.dumps(reasons) if reasons else None,
                 processing_time=processing_time,
                 ip_address=request.remote_addr,
                 user_agent=request.headers.get('User-Agent')
@@ -209,7 +258,6 @@ class Predict(Resource):
 
             result['analysis_id'] = analysis.id
 
-            # Cache the result
             try:
                 cache.set(f"analysis:{text_hash}", result, timeout=3600)  # Cache for 1 hour
             except Exception as cache_error:
@@ -293,6 +341,16 @@ class UserProfile(Resource):
         except Exception as e:
             logger.error(f"Profile retrieval error: {str(e)}")
             return {'error': 'Profile retrieval failed'}, 500
+
+
+@user_ns.route('/history')
+class UserHistory(Resource):
+    @jwt_required()
+    @api.response(200, 'User analysis history retrieved')
+    def get(self):
+        user_id = get_jwt_identity()
+        analyses = Analysis.query.filter_by(user_id=user_id).order_by(Analysis.created_at.desc()).limit(50).all()
+        return {'history': [analysis.to_dict() for analysis in analyses]}, 200
 
 
 def load_json_resource(filename):

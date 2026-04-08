@@ -1,0 +1,1 @@
+# Login Fix Progress&#10;- [x] Server running (start.ps1)&#10;- [x] DB seeded (logs confirm)&#10;- [x] Backend login works (200 logs)&#10;- [ ] Enhance Navbar user UI&#10;- [ ] Remove AI tagger&#10;- [ ] Rebuild/test

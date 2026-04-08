@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, request, abort
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
@@ -9,6 +9,8 @@ from flask_caching import Cache
 from prometheus_flask_exporter import PrometheusMetrics
 import os
 
+from .utils import seed_demo_users
+
 # Initialize extensions
 db = SQLAlchemy()
 jwt = JWTManager()
@@ -17,7 +19,8 @@ limiter = Limiter(key_func=get_remote_address)
 metrics = PrometheusMetrics(app=None)
 
 def create_app(config_name=None):
-    app = Flask(__name__, template_folder='../templates')
+    frontend_dist = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'dist')
+    app = Flask(__name__, static_folder=frontend_dist, static_url_path='', template_folder=frontend_dist)
 
     # Load configuration
     from .config import get_config
@@ -42,69 +45,29 @@ def create_app(config_name=None):
     from .routes import api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
 
-    # Web routes
-    @app.route('/')
-    def index():
-        """Serve the main web interface"""
-        return render_template('index.html')
+    # Serve static files
+    from flask import send_from_directory
+    @app.route('/assets/<path:filename>')
+    def serve_static(filename):
+        return send_from_directory(app.static_folder, f'assets/{filename}')
 
-    @app.route('/login')
-    def login_page():
-        """Serve the login page"""
-        return render_template('login.html')
-
-    @app.route('/register')
-    def register_page():
-        """Serve the registration page"""
-        return render_template('register.html')
-
-    @app.route('/detect')
-    def detect_page():
-        """Serve the news detection page"""
-        return render_template('detect.html')
-
-    @app.route('/about')
-    def about_page():
-        """Serve the about project page"""
-        return render_template('about.html')
-
-    @app.route('/how-it-works')
-    def how_it_works_page():
-        """Serve the how it works page"""
-        return render_template('how-it-works.html')
-
-    @app.route('/dataset')
-    def dataset_page():
-        """Serve the dataset information page"""
-        return render_template('dataset.html')
-
-    @app.route('/technology')
-    def technology_page():
-        """Serve the technology stack page"""
-        return render_template('technology.html')
-
-    @app.route('/tips')
-    def tips_page():
-        """Serve the tips for identifying fake news page"""
-        return render_template('tips.html')
-
-    @app.route('/contact')
-    def contact_page():
-        """Serve the contact page"""
-        return render_template('contact.html')
-
-    @app.route('/results')
-    def results_page():
-        """Serve the results and statistics page"""
-        return render_template('results.html')
-
-    @app.route('/docs')
-    def api_docs():
-        """Redirect to API documentation"""
-        return render_template('index.html')  # Could create a separate docs page
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
+    def serve_spa(path: str):
+        if path.startswith('api') or path.startswith('assets'):
+            abort(404)
+        return send_from_directory(app.static_folder, 'index.html')
 
     # Create database tables
     with app.app_context():
         db.create_all()
+        seed_demo_users(app)
+
+    return app
+
+    # Create database tables
+    with app.app_context():
+        db.create_all()
+        seed_demo_users(app)
 
     return app

@@ -1,3 +1,4 @@
+import json
 import nltk
 import logging
 from typing import NoReturn
@@ -67,9 +68,50 @@ def validate_environment():
     else:
         logger.info("Environment validation passed")
 
+
 def get_project_root():
     """Get the project root directory"""
     return Path(__file__).parent.parent
+
+
+def seed_demo_users(app):
+    """Seed the database with sample login credentials if not already present."""
+    from app.models import User
+    from app import db
+
+    credentials_path = get_project_root() / 'data' / 'login_credentials.json'
+    if not credentials_path.exists():
+        logger.info(f"Demo credentials file not found: {credentials_path}")
+        return
+
+    with open(credentials_path, 'r', encoding='utf-8') as credential_file:
+        data = json.load(credential_file)
+
+    sample_users = data.get('credentials', [])
+    if not sample_users:
+        logger.info('No sample credentials found to seed.')
+        return
+
+    with app.app_context():
+        for credential in sample_users:
+            username = credential.get('username')
+            email = credential.get('email')
+            password = credential.get('password')
+            if not username or not email or not password:
+                continue
+
+            existing_user = User.query.filter(
+                (User.username == username) | (User.email == email)
+            ).first()
+            if existing_user:
+                continue
+
+            user = User(username=username, email=email)
+            user.set_password(password)
+            db.session.add(user)
+
+        db.session.commit()
+        logger.info('Demo user credentials seeded successfully.')
 
 def format_timestamp(timestamp):
     """Format timestamp for display"""

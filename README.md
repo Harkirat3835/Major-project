@@ -43,12 +43,62 @@ A comprehensive, enterprise-grade fake news detection system built with Flask, f
 
 ## 📋 Prerequisites
 
-- Python 3.8+
-- pip package manager
-- Redis (optional, for caching)
-- PostgreSQL (optional, SQLite used by default)
+- **Required**: Python 3.8+
+- **Optional**: Node.js (for React frontend), Redis (for caching), PostgreSQL (alternative to SQLite)
+- **ML Dependencies**: pandas, numpy, scikit-learn (optional - app works with rule-based analysis)
+
+## ⚠️ Important Notes
+
+- **Core functionality works without ML libraries**: The application uses rule-based fake news detection as fallback
+- **Optional dependencies**: Install `pandas`, `numpy`, and `scikit-learn` for enhanced ML analysis
+- **Database**: Uses SQLite by default, no additional setup required
+- **Frontend**: Flask serves HTML templates by default; React frontend is optional
 
 ## 🚀 Quick Start
+
+### Windows (PowerShell - Recommended)
+```powershell
+# Run both backend and frontend automatically
+.\run_project.ps1
+
+# Run only backend (Flask + HTML templates)
+.\run_project.ps1 -BackendOnly
+
+# Run only frontend (React application)
+.\run_project.ps1 -FrontendOnly
+
+# Run without opening browser
+.\run_project.ps1 -NoBrowser
+```
+
+### Windows (Batch File)
+```batch
+# Run both applications
+run_project.bat
+
+# Run only backend
+run_project.bat backend
+
+# Run only frontend
+run_project.bat frontend
+```
+
+### Linux/macOS (Shell Script)
+```bash
+# Make executable (first time only)
+chmod +x run_project.sh
+
+# Run both applications
+./run_project.sh
+
+# Run only backend
+./run_project.sh backend
+
+# Run only frontend
+./run_project.sh frontend
+```
+
+### Manual Setup
 
 1. **Clone the repository**
    ```bash
@@ -56,12 +106,28 @@ A comprehensive, enterprise-grade fake news detection system built with Flask, f
    cd fake-news-detection
    ```
 
-2. **Install dependencies**
+2. **Set up Python virtual environment**
+   ```bash
+   python -m venv .venv
+   # On Windows:
+   .venv\Scripts\activate
+   # On macOS/Linux:
+   source .venv/bin/activate
+   ```
+
+3. **Install Python dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Set up environment variables** (optional)
+4. **Install Node.js dependencies (for React frontend)**
+   ```bash
+   cd frontend
+   npm install
+   cd ..
+   ```
+
+5. **Set up environment variables** (optional)
    ```bash
    export FLASK_ENV=development
    export SECRET_KEY=your-secret-key
@@ -69,15 +135,38 @@ A comprehensive, enterprise-grade fake news detection system built with Flask, f
    export REDIS_URL=redis://localhost:6379/0
    ```
 
-4. **Run the application**
+6. **Run the applications**
+
+   **Backend (Flask + HTML Templates):**
    ```bash
    python run.py
    ```
+   Access at: http://localhost:5000
 
-5. **Access the application**
-   - Web Interface: http://localhost:5000
-   - API Documentation: http://localhost:5000/api/
-   - Health Check: http://localhost:5000/api/health
+   **Frontend (React Application):**
+   ```bash
+   cd frontend
+   npm run dev
+   ```
+   Access at: http://localhost:5173
+
+## 🖥️ Application Interfaces
+
+This project provides two user interfaces:
+
+### 1. Flask Backend with HTML Templates
+- **URL**: http://localhost:5000
+- **Features**: Complete web application with modern glassmorphism UI
+- **Technology**: Flask + Bootstrap 5 + Custom CSS
+- **Best for**: Quick deployment, traditional web app experience
+
+### 2. React Frontend Application
+- **URL**: http://localhost:5173
+- **Features**: Modern React SPA with advanced components
+- **Technology**: React + TypeScript + Vite
+- **Best for**: Rich user interactions, modern development workflow
+
+Both interfaces connect to the same Flask API backend for analysis functionality.
 
 ## 📖 API Documentation
 
