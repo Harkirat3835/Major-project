@@ -4,12 +4,14 @@ import { apiRequest, clearAccessToken } from "@/lib/api";
 interface AuthContextType {
   user: any | null;
   loading: boolean;
+  setUser: (user: any | null) => void;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
+  setUser: () => {},
   signOut: async () => {},
 });
 
@@ -41,7 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signOut }}>
+    <AuthContext.Provider value={{ user, loading, setUser, signOut }}>
       {children}
     </AuthContext.Provider>
   );

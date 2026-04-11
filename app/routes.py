@@ -1,8 +1,9 @@
 from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
-from flask_limiter.decorators import limit
+from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token, verify_jwt_in_request
+from flask_limiter.util import get_remote_address
 from flask_restx import Api, Resource, fields, Namespace
 from sqlalchemy import or_
+from datetime import datetime, timedelta
 from .ml_model import (
     load_model,
     predict_news,
@@ -11,7 +12,7 @@ from .ml_model import (
     classify_input_source,
 )
 from .models import db, User, Analysis, Feedback
-from . import cache, limiter
+from . import cache, limiter, mail
 import hashlib
 import time
 import logging
@@ -19,8 +20,23 @@ import json
 import os
 
 logger = logging.getLogger(__name__)
+limit = limiter.limit
 
 api_bp = Blueprint('api', __name__)
+
+
+def get_current_user_id():
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return None
+
+    try:
+        verify_jwt_in_request(optional=True)
+        identity = get_jwt_identity()
+    except Exception:
+        return None
+
+    return int(identity) if identity is not None else None
 
 # Initialize Flask-RESTX API
 api = Api(api_bp, version='2.0', title='Fake News Detection API',
@@ -212,11 +228,11 @@ class Login(Resource):
                 # Create access and refresh tokens
                 from flask_jwt_extended import create_refresh_token
                 access_token = create_access_token(
-                    identity=user.id,
+                    identity=str(user.id),
                     expires_delta=timedelta(seconds=current_app.config['JWT_ACCESS_TOKEN_EXPIRES'])
                 )
                 refresh_token = create_refresh_token(
-                    identity=user.id,
+                    identity=str(user.id),
                     expires_delta=timedelta(seconds=current_app.config['JWT_REFRESH_TOKEN_EXPIRES'])
                 )
                 
@@ -227,11 +243,18 @@ class Login(Resource):
                 return {
                     'access_token': access_token,
                     'refresh_token': refresh_token,
-                    'user': user.to_dict(),
+                    'user': {
+                        **user.to_dict(),
+                        'name': user.username.replace('_', ' ').title(),
+                    },
                     'token_type': 'Bearer'
                 }, 200
 
             # Failed login
+            if not user:
+                logger.warning(f"Login attempt for non-existent user: {login_value}")
+                return {'error': 'Invalid credentials'}, 401
+
             user.increment_failed_login()
             db.session.commit()
             
@@ -252,12 +275,12 @@ class Verify(Resource):
     @api.response(200, 'Token verified')
     @api.response(401, 'Invalid token')
     def get(self):
-        user = User.query.get(get_jwt_identity())
+        user = db.session.get(User, get_current_user_id())
         if not user:
             return {'error': 'User not found'}, 404
 
         user_data = user.to_dict()
-        user_data['name'] = user.username
+        user_data['name'] = user.username.replace('_', ' ').title()
         return {'user': user_data}, 200
 
 @auth_ns.route('/refresh')
@@ -269,8 +292,10 @@ class Refresh(Resource):
     def post(self):
         """Refresh access token using refresh token with rotation"""
         try:
-            current_user_id = get_jwt_identity()
-            user = User.query.get_or_404(current_user_id)
+            current_user_id = int(get_jwt_identity())
+            user = db.session.get(User, current_user_id)
+            if not user:
+                return {'error': 'User not found'}, 404
             
             refresh_token = request.json.get('refresh_token') if request.is_json else None
             
@@ -280,11 +305,11 @@ class Refresh(Resource):
             # Rotate tokens - generate new ones
             from flask_jwt_extended import create_access_token, create_refresh_token
             new_access_token = create_access_token(
-                identity=user.id,
+                identity=str(user.id),
                 expires_delta=timedelta(seconds=current_app.config['JWT_ACCESS_TOKEN_EXPIRES'])
             )
             new_refresh_token = create_refresh_token(
-                identity=user.id,
+                identity=str(user.id),
                 expires_delta=timedelta(seconds=current_app.config['JWT_REFRESH_TOKEN_EXPIRES'])
             )
             
@@ -380,7 +405,7 @@ class AnalysisList(Resource):
     @api.response(200, 'Analysis history retrieved')
     def get(self):
         """Get user's analysis history"""
-        user_id = get_jwt_identity()
+        user_id = get_current_user_id()
         if user_id:
             analyses = Analysis.query.filter_by(user_id=user_id).order_by(Analysis.created_at.desc()).limit(50).all()
         else:
@@ -401,10 +426,14 @@ class Predict(Resource):
         try:
             start_time = time.time()
             data = request.get_json(silent=True) or {}
+            current_user_id = None
 
             text = str(data.get('text', '') or '').strip()
             url = str(data.get('url', '') or '').strip()
             source_type = str(data.get('source_type', '') or '').strip().lower() or None
+
+            if request.headers.get('Authorization', '').startswith('Bearer '):
+                current_user_id = get_current_user_id()
 
             if not text and not url:
                 return {'error': 'Please provide article text or a URL to analyze.'}, 400
@@ -455,7 +484,7 @@ class Predict(Resource):
             result['processing_time'] = round(processing_time, 2)
 
             analysis = Analysis(
-                user_id=get_jwt_identity(),
+                user_id=current_user_id,
                 text_hash=text_hash,
                 text_length=len(text.split()),
                 prediction=result['prediction'],
@@ -480,7 +509,7 @@ class Predict(Resource):
             return result, 200
 
         except Exception as e:
-            logger.error(f"Analysis error: {str(e)}")
+            logger.exception("Analysis error")
             return {'error': 'Analysis failed'}, 500
 
 
@@ -502,7 +531,7 @@ class AnalysisFeedback(Resource):
     def post(self, analysis_id):
         """Submit feedback on an analysis"""
         try:
-            user_id = get_jwt_identity()
+            user_id = get_current_user_id()
             data = request.get_json(silent=True) or {}
             if not data or 'is_correct' not in data:
                 return {'error': 'Missing required fields'}, 400
@@ -533,8 +562,10 @@ class UserProfile(Resource):
     def get(self):
         """Get user profile and statistics"""
         try:
-            user_id = get_jwt_identity()
-            user = User.query.get_or_404(user_id)
+            user_id = get_current_user_id()
+            user = db.session.get(User, user_id)
+            if not user:
+                return {'error': 'User not found'}, 404
 
             # Get user statistics
             total_analyses = Analysis.query.filter_by(user_id=user_id).count()
@@ -542,7 +573,10 @@ class UserProfile(Resource):
             fake_news_count = Analysis.query.filter_by(user_id=user_id, prediction='Fake').count()
 
             return {
-                'user': user.to_dict(),
+                'user': {
+                    **user.to_dict(),
+                    'name': user.username.replace('_', ' ').title(),
+                },
                 'statistics': {
                     'total_analyses': total_analyses,
                     'real_news_count': real_news_count,
@@ -561,7 +595,7 @@ class UserHistory(Resource):
     @jwt_required()
     @api.response(200, 'User analysis history retrieved')
     def get(self):
-        user_id = get_jwt_identity()
+        user_id = get_current_user_id()
         analyses = Analysis.query.filter_by(user_id=user_id).order_by(Analysis.created_at.desc()).limit(50).all()
         return {'history': [analysis.to_dict() for analysis in analyses]}, 200
 

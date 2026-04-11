@@ -36,7 +36,12 @@ def main():
     print("🔐 Demo Login: admin@truthguard.ai / Admin@1234!")
     print("💡 Secure auth with email verification & password reset")
 
-    app.run(host=host, port=port, debug=os.environ.get('FLASK_DEBUG', 'False').lower() == 'true')
+    app.run(
+        host=host,
+        port=port,
+        debug=os.environ.get('FLASK_DEBUG', 'False').lower() == 'true',
+        threaded=False,
+    )
 
 if __name__ == '__main__':
     main()

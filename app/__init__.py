@@ -1,14 +1,20 @@
-from flask import Flask, request, abort
+from flask import Flask, abort
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
-from flask_restx import Api
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_caching import Cache
-from flask_mail import Mail
 from prometheus_flask_exporter import PrometheusMetrics
 import os
+from redis import Redis
+
+try:
+    from flask_mail import Mail
+except ModuleNotFoundError:
+    class Mail:  # type: ignore[override]
+        def init_app(self, app):
+            app.logger.warning("Flask-Mail is not installed. Email features are disabled.")
 
 from .utils import seed_demo_users
 
@@ -36,6 +42,8 @@ def create_app(config_name=None):
     
     # Cache initialization
     try:
+        redis_client = Redis.from_url(app.config['REDIS_URL'], socket_connect_timeout=1, socket_timeout=1)
+        redis_client.ping()
         cache.init_app(app, config={'CACHE_TYPE': 'redis', 'CACHE_REDIS_URL': app.config['REDIS_URL']})
         app.logger.info("Redis cache initialized successfully")
     except Exception as cache_error:
@@ -44,12 +52,6 @@ def create_app(config_name=None):
     
     limiter.init_app(app)
     mail.init_app(app)
-    
-    # Custom rate limit storage if Redis available
-    if app.config.get('REDIS_URL'):
-        from flask_limiter import storage
-        from redis import Redis
-        limiter.storage = storage.RedisStorage(Redis.from_url(app.config['REDIS_URL']))
 
     # Initialize Prometheus metrics
     metrics.init_app(app)

@@ -98,6 +98,7 @@ class User(db.Model):
     def to_dict(self, include_sensitive=False):
         base_dict = {
             'id': self.id,
+            'name': self.username.replace('_', ' ').title(),
             'username': self.username,
             'email': self.email,
             'email_verified': self.email_verified,

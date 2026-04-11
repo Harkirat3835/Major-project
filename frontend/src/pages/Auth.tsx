@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { apiRequest, setAccessToken } from "@/lib/api";
 import { Shield, Mail, Lock, User, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -13,6 +14,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { setUser } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +28,7 @@ const Auth = () => {
           body: JSON.stringify({ login: email, password }),
         });
         setAccessToken(result.access_token);
+        setUser(result.user ?? null);
         navigate("/");
       } else {
         const username = displayName.trim() || email.split("@")[0] || email;

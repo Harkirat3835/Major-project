@@ -4,6 +4,8 @@ import logging
 from typing import NoReturn
 import os
 from pathlib import Path
+from datetime import datetime, timedelta
+import hashlib
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +78,7 @@ def get_project_root():
 
 def seed_demo_users(app):
     """Seed the database with sample login credentials if not already present."""
-    from app.models import User
+    from app.models import User, Analysis, Feedback
     from app import db
 
     credentials_path = get_project_root() / 'data' / 'login_credentials.json'
@@ -103,12 +105,48 @@ def seed_demo_users(app):
             existing_user = User.query.filter(
                 (User.username == username) | (User.email == email)
             ).first()
-            if existing_user:
-                continue
 
-            user = User(username=username, email=email)
-            user.set_password(password)
-            db.session.add(user)
+            if existing_user:
+                user = existing_user
+            else:
+                user = User(username=username, email=email)
+                user.set_password(password)
+                db.session.add(user)
+                db.session.flush()
+
+            user.is_admin = bool(credential.get('is_admin', user.is_admin))
+            user.is_active = bool(credential.get('is_active', True))
+            user.email_verified = bool(credential.get('email_verified', True))
+
+            if not user.analyses:
+                for index, analysis_data in enumerate(credential.get('analysis_history', []), start=1):
+                    created_at = datetime.utcnow() - timedelta(days=int(analysis_data.get('days_ago', 0)))
+                    analysis = Analysis(
+                        user_id=user.id,
+                        text_hash=hashlib.sha256(f"{username}:{index}".encode('utf-8')).hexdigest(),
+                        text_length=int(analysis_data.get('text_length', 0)),
+                        prediction=analysis_data.get('prediction', 'Real'),
+                        confidence=float(analysis_data.get('confidence', 0)),
+                        reasons=json.dumps(analysis_data.get('reasons', [])),
+                        processing_time=float(analysis_data.get('processing_time', 0)),
+                        ip_address='127.0.0.1',
+                        user_agent='Seeded demo activity',
+                        created_at=created_at,
+                    )
+                    db.session.add(analysis)
+                    db.session.flush()
+
+                    feedback_data = analysis_data.get('feedback')
+                    if feedback_data:
+                        feedback = Feedback(
+                            analysis_id=analysis.id,
+                            user_id=user.id,
+                            is_correct=bool(feedback_data.get('is_correct', True)),
+                            user_correction=feedback_data.get('user_correction'),
+                            comment=feedback_data.get('comment'),
+                            created_at=created_at + timedelta(minutes=5),
+                        )
+                        db.session.add(feedback)
 
         db.session.commit()
         logger.info('Demo user credentials seeded successfully.')

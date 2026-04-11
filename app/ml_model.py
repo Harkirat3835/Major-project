@@ -1,8 +1,5 @@
-import os
-import pickle
 import re
 import logging
-import numpy as np
 import nltk
 import requests
 from bs4 import BeautifulSoup
@@ -12,28 +9,28 @@ from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
-# Download NLTK data if not present
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt')
+def safe_word_tokenize(text: str) -> List[str]:
+    """Tokenize text with a regex fallback when NLTK data is unavailable."""
+    try:
+        return nltk.word_tokenize(text)
+    except LookupError:
+        return re.findall(r"[a-zA-Z']+", text)
 
-try:
-    nltk.data.find('corpora/stopwords')
-except LookupError:
-    nltk.download('stopwords')
 
-try:
-    nltk.data.find('corpora/wordnet')
-except LookupError:
-    nltk.download('wordnet')
+def get_stop_words() -> set[str]:
+    """Return English stopwords with an empty-set fallback."""
+    try:
+        return set(nltk.corpus.stopwords.words('english'))
+    except LookupError:
+        logger.warning('NLTK stopwords corpus not available. Continuing without stopword filtering.')
+        return set()
 
 class SimpleFakeNewsDetector:
     """Rule-based fake news detector with social and URL heuristics."""
 
     def __init__(self):
         self.lemmatizer = nltk.stem.WordNetLemmatizer()
-        self.stop_words = set(nltk.corpus.stopwords.words('english'))
+        self.stop_words = get_stop_words()
         self.fake_keywords = {
             'shocking', 'unbelievable', 'amazing', 'incredible', 'breaking', 'exclusive',
             'conspiracy', 'hoax', 'fake news', 'deep state', 'illuminati', 'scandal',
@@ -56,7 +53,7 @@ class SimpleFakeNewsDetector:
         text = re.sub(r'<[^>]+>', ' ', text)
         text = re.sub(r'[^a-zA-Z\s]', ' ', text)
 
-        tokens = nltk.word_tokenize(text)
+        tokens = safe_word_tokenize(text)
         tokens = [word for word in tokens if word not in self.stop_words and len(word) > 2]
 
         return ' '.join(tokens)
