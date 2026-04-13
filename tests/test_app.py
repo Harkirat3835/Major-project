@@ -83,6 +83,7 @@ class TestFakeNewsDetector:
         data = response.get_json()
         assert data['prediction'] == 'Real'
         assert data['source_type'] == 'article'
+        assert 'text_preview' in data
 
     def test_predict_endpoint_classifies_url_content(self):
         """Test prediction endpoint can fetch and classify URL content."""
@@ -118,6 +119,54 @@ class TestFakeNewsDetector:
         finally:
             server.shutdown()
             thread.join(timeout=2)
+
+    def test_saved_history_and_feedback_flow(self):
+        """Test signed-in analyses are saved and feedback can be stored."""
+        login_response = self.client.post('/api/auth/login', json={
+            'login': 'admin@truthguard.ai',
+            'password': 'Admin@1234'
+        })
+        assert login_response.status_code == 200
+        token = login_response.get_json()['access_token']
+        headers = {'Authorization': f'Bearer {token}'}
+
+        predict_response = self.client.post('/api/predict', json={
+            'text': (
+                "Reuters reported that health officials published the verified advisory "
+                "after reviewing the data and issuing a formal statement."
+            )
+        }, headers=headers)
+        assert predict_response.status_code == 200
+        analysis_id = predict_response.get_json()['analysis_id']
+
+        history_response = self.client.get('/api/user/history', headers=headers)
+        assert history_response.status_code == 200
+        history = history_response.get_json()['history']
+        assert any(item['id'] == analysis_id for item in history)
+
+        saved_item = next(item for item in history if item['id'] == analysis_id)
+        assert saved_item['text_preview']
+        assert saved_item['source_type'] == 'article'
+        assert saved_item['feedback'] == []
+
+        feedback_response = self.client.post(
+            f'/api/analysis/{analysis_id}/feedback',
+            json={
+                'analysis_id': analysis_id,
+                'is_correct': True,
+                'comment': 'This verdict looks accurate.'
+            },
+            headers=headers
+        )
+        assert feedback_response.status_code in [200, 201]
+        feedback = feedback_response.get_json()['feedback']
+        assert feedback['analysis_id'] == analysis_id
+        assert feedback['is_correct'] is True
+
+        updated_history = self.client.get('/api/user/history', headers=headers)
+        assert updated_history.status_code == 200
+        updated_item = next(item for item in updated_history.get_json()['history'] if item['id'] == analysis_id)
+        assert len(updated_item['feedback']) == 1
 
     def test_clean_text_function(self):
         """Test text cleaning function"""

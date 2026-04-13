@@ -17,9 +17,11 @@ const Navbar = () => {
         </Link>
 
         <div className="hidden md:flex items-center gap-8">
+          <a href="#check" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Analyze</a>
           <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
           <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>
           <a href="#stats" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Stats</a>
+          {user ? <a href="#history" className="text-sm text-muted-foreground hover:text-foreground transition-colors">History</a> : null}
           {user ? (
             <div className="flex items-center gap-2 relative">
               <button 
@@ -58,9 +60,11 @@ const Navbar = () => {
 
       {isOpen && (
         <div className="md:hidden bg-background border-b border-border px-6 py-4 flex flex-col gap-4">
+          <a href="#check" className="text-sm text-muted-foreground">Analyze</a>
           <a href="#how-it-works" className="text-sm text-muted-foreground">How It Works</a>
           <a href="#features" className="text-sm text-muted-foreground">Features</a>
           <a href="#stats" className="text-sm text-muted-foreground">Stats</a>
+          {user ? <a href="#history" className="text-sm text-muted-foreground">History</a> : null}
           {user ? (
             <div className="flex flex-col items-center gap-2 text-sm">
               <span className="font-semibold">{user.username || user.email}</span>

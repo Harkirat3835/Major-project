@@ -4,6 +4,9 @@ interface ResultCardProps {
   verdict: "real" | "fake" | "uncertain";
   confidence: number;
   summary: string;
+  reasons?: string[];
+  sourceLabel?: string;
+  savedMessage?: string;
 }
 
 const config = {
@@ -30,7 +33,7 @@ const config = {
   },
 };
 
-const ResultCard = ({ verdict, confidence, summary }: ResultCardProps) => {
+const ResultCard = ({ verdict, confidence, summary, reasons = [], sourceLabel, savedMessage }: ResultCardProps) => {
   const c = config[verdict];
   const Icon = c.icon;
 
@@ -46,6 +49,20 @@ const ResultCard = ({ verdict, confidence, summary }: ResultCardProps) => {
         </div>
       </div>
       <p className="text-sm text-muted-foreground leading-relaxed">{summary}</p>
+      {sourceLabel ? <p className="mt-3 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">{sourceLabel}</p> : null}
+      {reasons.length > 0 ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {reasons.map((reason, index) => (
+            <span
+              key={`${reason}-${index}`}
+              className="rounded-full border border-border/60 bg-background/60 px-3 py-1 text-xs text-muted-foreground"
+            >
+              {reason}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {savedMessage ? <p className="mt-4 text-xs text-primary">{savedMessage}</p> : null}
     </div>
   );
 };

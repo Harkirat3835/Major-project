@@ -8,6 +8,8 @@ from flask_caching import Cache
 from prometheus_flask_exporter import PrometheusMetrics
 import os
 from redis import Redis
+from sqlalchemy.exc import OperationalError
+from sqlalchemy import inspect
 
 try:
     from flask_mail import Mail
@@ -25,6 +27,35 @@ cache = Cache()
 limiter = Limiter(key_func=get_remote_address)
 mail = Mail()
 metrics = PrometheusMetrics(app=None)
+
+
+def _sqlite_schema_out_of_date(app):
+    database_uri = str(app.config.get('SQLALCHEMY_DATABASE_URI', ''))
+    if not database_uri.startswith('sqlite:'):
+        return False
+
+    from .models import User, Analysis, Feedback
+
+    inspector = inspect(db.engine)
+    expected_columns = {
+        'user': {column.name for column in User.__table__.columns},
+        'analysis': {column.name for column in Analysis.__table__.columns},
+        'feedback': {column.name for column in Feedback.__table__.columns},
+    }
+
+    for table_name, required in expected_columns.items():
+        if not inspector.has_table(table_name):
+            return False
+        current_columns = {column['name'] for column in inspector.get_columns(table_name)}
+        if not required.issubset(current_columns):
+            app.logger.warning(
+                "SQLite table '%s' is missing columns: %s",
+                table_name,
+                ", ".join(sorted(required - current_columns)),
+            )
+            return True
+
+    return False
 
 def create_app(config_name=None):
     frontend_dist = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'dist')
@@ -87,7 +118,30 @@ def create_app(config_name=None):
     # Create database tables and seed data
     with app.app_context():
         db.create_all()
-        seed_demo_users(app)
+        try:
+            if _sqlite_schema_out_of_date(app):
+                db.drop_all()
+                db.create_all()
+            seed_demo_users(app)
+        except OperationalError as db_error:
+            # Recover automatically from stale local SQLite schemas after model changes.
+            if (
+                str(app.config.get('SQLALCHEMY_DATABASE_URI', '')).startswith('sqlite:')
+                and (
+                    'no such column' in str(db_error).lower()
+                    or 'has no column named' in str(db_error).lower()
+                )
+            ):
+                app.logger.warning(
+                    "SQLite schema is out of date (%s). Recreating local database tables.",
+                    db_error,
+                )
+                db.session.rollback()
+                db.drop_all()
+                db.create_all()
+                seed_demo_users(app)
+            else:
+                raise
         app.logger.info("Database initialized and demo users seeded")
 
     return app

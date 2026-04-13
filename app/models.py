@@ -117,6 +117,9 @@ class Analysis(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     text_hash = db.Column(db.String(64), nullable=False)  # For duplicate detection
     text_length = db.Column(db.Integer, nullable=False)
+    source_type = db.Column(db.String(32), nullable=True)
+    source_url = db.Column(db.Text, nullable=True)
+    text_preview = db.Column(db.Text, nullable=True)
     prediction = db.Column(db.String(10), nullable=False)  # 'Real' or 'Fake'
     confidence = db.Column(db.Float, nullable=True)
     reasons = db.Column(db.Text, nullable=True)  # JSON string of reasons
@@ -126,15 +129,27 @@ class Analysis(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
+        parsed_reasons = []
+        if self.reasons:
+            try:
+                import json
+                parsed_reasons = json.loads(self.reasons)
+            except (TypeError, ValueError):
+                parsed_reasons = [self.reasons]
+
         return {
             'id': self.id,
             'user_id': self.user_id,
             'text_length': self.text_length,
+            'source_type': self.source_type,
+            'source_url': self.source_url,
+            'text_preview': self.text_preview,
             'prediction': self.prediction,
             'confidence': self.confidence,
-            'reasons': self.reasons,
+            'reasons': parsed_reasons,
             'processing_time': self.processing_time,
-            'created_at': self.created_at.isoformat()
+            'created_at': self.created_at.isoformat(),
+            'feedback': [item.to_dict() for item in self.feedback],
         }
 
 class Feedback(db.Model):

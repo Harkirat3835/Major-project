@@ -12,7 +12,7 @@ from .ml_model import (
     classify_input_source,
 )
 from .models import db, User, Analysis, Feedback
-from . import cache, limiter, mail
+from . import cache, limiter
 import hashlib
 import time
 import logging
@@ -99,12 +99,12 @@ feedback_model = api.model('Feedback', {
 class Register(Resource):
     @limit("3 per hour", key_func=get_remote_address)
     @api.expect(user_model)
-    @api.response(201, 'User registered - check email to verify')
+    @api.response(201, 'User registered successfully')
     @api.response(400, 'Validation error')
     @api.response(409, 'User already exists')
     @api.response(429, 'Rate limit exceeded')
     def post(self):
-        """Register new user with password policy and email verification"""
+        """Register new user with password policy validation"""
         try:
             data = request.get_json(silent=True) or {}
             username = data.get('username') or data.get('name')
@@ -152,30 +152,16 @@ class Register(Resource):
 
             user = User(username=username.strip(), email=email.strip())
             user.set_password(password)
-
-            # Generate email verification token
-            verification_token = user.generate_verification_token()
+            user.email_verified = True
             db.session.add(user)
             db.session.commit()
 
-            # Send verification email (async in production)
-            try:
-                from flask_mail import Message
-                msg = Message(
-                    subject='Verify your TruthLens account',
-                    recipients=[user.email],
-                    body=f'Please verify your email by visiting: http://localhost:5000/api/auth/verify-email/{verification_token}\n\nThis link expires in 24 hours.',
-                    sender=current_app.config['MAIL_DEFAULT_SENDER']
-                )
-                mail.send(msg)
-                logger.info(f"Verification email sent to {user.email}")
-            except Exception as mail_error:
-                logger.error(f"Failed to send verification email: {mail_error}")
-
             return {
-                'message': 'Account created successfully. Please check your email to verify your account.',
-                'user': user.to_dict(),
-                'next_step': 'Verify your email before logging in'
+                'message': 'Account created successfully.',
+                'user': {
+                    **user.to_dict(),
+                    'name': user.username.replace('_', ' ').title(),
+                },
             }, 201
 
         except Exception as e:
@@ -218,9 +204,6 @@ class Login(Resource):
                     'error': f'Account locked due to too many failed attempts. Try again in {remaining:.0f} minutes.'
                 }, 401
 
-            if not user.email_verified:
-                return {'error': 'Please verify your email before logging in. Resend link sent to your email.'}, 401
-                
             if user.check_password(password):
                 user.reset_failed_logins()
                 db.session.commit()
@@ -328,77 +311,6 @@ class Refresh(Resource):
             logger.error(f"Token refresh error: {str(e)}")
             return {'error': 'Token refresh failed'}, 500
 
-@auth_ns.route('/verify-email/<token>')
-class VerifyEmail(Resource):
-    @limit("10 per hour", key_func=get_remote_address)
-    @api.response(200, 'Email verified')
-    @api.response(400, 'Invalid or expired token')
-    def post(self, token):
-        """Verify email using token"""
-        try:
-            user = User.query.filter_by(email_verification_token=token).first()
-            if not user:
-                return {'error': 'Invalid verification token'}, 400
-            
-            if user.email_verified:
-                return {'message': 'Email already verified'}, 200
-            
-            # Simple expiry check (24 hours from token generation)
-            from datetime import timedelta
-            if user.updated_at < datetime.utcnow() - timedelta(hours=24):
-                return {'error': 'Verification token expired. Please register again.'}, 400
-            
-            user.email_verified = True
-            user.email_verification_token = None
-            db.session.commit()
-            
-            return {
-                'message': 'Email verified successfully. You can now log in.',
-                'user': user.to_dict()
-            }, 200
-            
-        except Exception as e:
-            logger.error(f"Email verification error: {str(e)}")
-            return {'error': 'Verification failed'}, 500
-
-@auth_ns.route('/verify-email/resend')
-class ResendVerification(Resource):
-    @jwt_required()
-    @limit("5 per hour", key_func=lambda: get_jwt_identity())
-    @api.response(200, 'Verification email resent')
-    @api.response(400, 'Email already verified')
-    def post(self):
-        """Resend verification email"""
-        try:
-            user_id = get_jwt_identity()
-            user = User.query.get_or_404(user_id)
-            
-            if user.email_verified:
-                return {'error': 'Email already verified'}, 400
-            
-            verification_token = user.generate_verification_token()
-            db.session.commit()
-            
-            # Send email
-            try:
-                from flask_mail import Message
-                msg = Message(
-                    subject='Verify your TruthLens account',
-                    recipients=[user.email],
-                    body=f'Please verify your email by visiting: http://localhost:5000/api/auth/verify-email/{verification_token}\n\nThis link expires in 24 hours.',
-                    sender=current_app.config['MAIL_DEFAULT_SENDER']
-                )
-                mail.send(msg)
-                logger.info(f"Resent verification email to {user.email}")
-            except Exception as mail_error:
-                logger.error(f"Failed to resend verification email: {mail_error}")
-            
-            return {'message': 'Verification email resent successfully'}, 200
-            
-        except Exception as e:
-            logger.error(f"Resend verification error: {str(e)}")
-            return {'error': 'Failed to resend email'}, 500
-
 @analysis_ns.route('/')
 class AnalysisList(Resource):
     @jwt_required(optional=True)
@@ -487,6 +399,9 @@ class Predict(Resource):
                 user_id=current_user_id,
                 text_hash=text_hash,
                 text_length=len(text.split()),
+                source_type=source_type,
+                source_url=url if url else None,
+                text_preview=result['text_preview'],
                 prediction=result['prediction'],
                 confidence=result.get('confidence'),
                 reasons=json.dumps(reasons) if reasons else None,
@@ -538,18 +453,39 @@ class AnalysisFeedback(Resource):
 
             analysis = Analysis.query.get_or_404(analysis_id)
 
-            feedback = Feedback(
-                analysis_id=analysis_id,
-                user_id=user_id,
-                is_correct=data['is_correct'],
-                user_correction=data.get('user_correction'),
-                comment=data.get('comment')
-            )
+            existing_feedback = None
+            if user_id is not None:
+                existing_feedback = Feedback.query.filter_by(
+                    analysis_id=analysis_id,
+                    user_id=user_id
+                ).first()
 
-            db.session.add(feedback)
+            if existing_feedback:
+                existing_feedback.is_correct = data['is_correct']
+                existing_feedback.user_correction = data.get('user_correction')
+                existing_feedback.comment = data.get('comment')
+                feedback = existing_feedback
+                status_code = 200
+                message = 'Feedback updated successfully'
+            else:
+                feedback = Feedback(
+                    analysis_id=analysis_id,
+                    user_id=user_id,
+                    is_correct=data['is_correct'],
+                    user_correction=data.get('user_correction'),
+                    comment=data.get('comment')
+                )
+                db.session.add(feedback)
+                status_code = 201
+                message = 'Feedback submitted successfully'
+
             db.session.commit()
 
-            return {'message': 'Feedback submitted successfully', 'feedback_id': feedback.id}, 201
+            return {
+                'message': message,
+                'feedback_id': feedback.id,
+                'feedback': feedback.to_dict(),
+            }, status_code
 
         except Exception as e:
             logger.error(f"Feedback submission error: {str(e)}")

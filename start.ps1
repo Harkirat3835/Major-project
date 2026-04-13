@@ -1,150 +1,82 @@
-# TruthLens - AI Fake News Detection - Complete Startup Script
-# Professional startup script for TruthLens platform
+$ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $frontendDir = Join-Path $root 'frontend'
-$venvPath = Join-Path $root '.venv'
-$venvActivate = Join-Path $venvPath 'Scripts\Activate.ps1'
+$venvPython = Join-Path $root '.venv\Scripts\python.exe'
 
-Write-Host "=====================================================================" -ForegroundColor Cyan
-Write-Host "                    TruthLens AI" -ForegroundColor Cyan
-Write-Host "           Professional Fake News Detection" -ForegroundColor Cyan
-Write-Host "                    Complete Launch" -ForegroundColor Cyan
-Write-Host "=====================================================================" -ForegroundColor Cyan
-Write-Host ""
+function Write-Step($message) {
+    Write-Host ""
+    Write-Host "==> $message" -ForegroundColor Cyan
+}
 
-# Step 1: Setup Python Virtual Environment
-Write-Host "[1/5] Setting up Python environment..." -ForegroundColor Yellow
-if (-Not (Test-Path $venvPath)) {
-    Write-Host "      Creating virtual environment..." -ForegroundColor Gray
+function Test-AppReady {
+    try {
+        $response = Invoke-WebRequest -Uri 'http://127.0.0.1:5000/api/health' -UseBasicParsing -TimeoutSec 2
+        return $response.StatusCode -eq 200
+    } catch {
+        return $false
+    }
+}
+
+Set-Location $root
+
+Write-Host "TruthLens launcher" -ForegroundColor Green
+Write-Host "Workspace: $root" -ForegroundColor DarkGray
+
+Write-Step "Checking Python environment"
+if (-not (Test-Path $venvPython)) {
+    Write-Host "Creating virtual environment..." -ForegroundColor Yellow
     python -m venv .venv
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "ERROR: Failed to create virtual environment." -ForegroundColor Red
-        exit 1
-    }
-} else {
-    Write-Host "      Virtual environment already exists." -ForegroundColor Green
 }
 
-# Activate virtual environment
-& $venvActivate
+Write-Host "Installing backend dependencies..." -ForegroundColor Yellow
+& $venvPython -m pip install -q -r requirements.txt
 
-# Step 2: Install Python Dependencies
-Write-Host "[2/5] Installing Python dependencies..." -ForegroundColor Yellow
-if (Test-Path "requirements.txt") {
-    pip install -q -r requirements.txt
-    Write-Host "      Python dependencies installed successfully." -ForegroundColor Green
-} else {
-    Write-Host "ERROR: requirements.txt not found." -ForegroundColor Red
-    exit 1
-}
-
-# Step 3: Build React Frontend
-Write-Host "[3/5] Preparing React frontend..." -ForegroundColor Yellow
-if (Test-Path $frontendDir) {
+Write-Step "Preparing frontend"
+if (Test-Path (Join-Path $frontendDir 'package.json')) {
     Set-Location $frontendDir
-    
-    if (Test-Path "package.json") {
-        if (-Not (Test-Path "dist")) {
-            Write-Host "      Installing Node.js dependencies..." -ForegroundColor Gray
-            npm install --silent 2>&1 | Out-Null
-            if ($LASTEXITCODE -ne 0) {
-                Write-Host "ERROR: Failed to install Node.js dependencies." -ForegroundColor Red
-                Set-Location $root
-                exit 1
-            }
-            
-            Write-Host "      Building React frontend..." -ForegroundColor Gray
-            npm run build --silent 2>&1 | Out-Null
-            if ($LASTEXITCODE -ne 0) {
-                Write-Host "ERROR: Failed to build frontend." -ForegroundColor Red
-                Set-Location $root
-                exit 1
-            }
-            Write-Host "      Frontend built successfully." -ForegroundColor Green
-        } else {
-            Write-Host "      Frontend already built." -ForegroundColor Green
-        }
-    }
+    Write-Host "Installing frontend dependencies..." -ForegroundColor Yellow
+    npm install --silent
+    Write-Host "Building frontend..." -ForegroundColor Yellow
+    npm run build --silent
     Set-Location $root
 }
 
-# Step 4: Verify Project Structure
-Write-Host "[4/5] Verifying project structure..." -ForegroundColor Yellow
-$checks = @(
-    @("Frontend dist", "./frontend/dist/index.html"),
-    @("Backend routes", "./app/routes.py"),
-    @("Database models", "./app/models.py"),
-    @("ML model", "./model/model.pkl")
-)
-
-foreach ($check in $checks) {
-    if (Test-Path $check[1]) {
-        Write-Host "      [OK] $($check[0])" -ForegroundColor Green
-    } else {
-        Write-Host "      [WARN] $($check[0]) - Missing" -ForegroundColor Yellow
-    }
+Write-Step "Starting server"
+$existing = Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($existing) {
+    Write-Host "Stopping existing server on port 5000..." -ForegroundColor Yellow
+    Stop-Process -Id $existing.OwningProcess -Force
+    Start-Sleep -Seconds 2
 }
 
-# Step 5: Start Flask Server
-Write-Host "[5/5] Starting Flask server..." -ForegroundColor Yellow
-Write-Host ""
+$server = Start-Process -FilePath $venvPython -ArgumentList 'run.py' -WorkingDirectory $root -WindowStyle Hidden -PassThru
 
-# Start Flask as a background job
-$flaskJob = Start-Job -ScriptBlock {
-    cd $args[0]
-    python run.py
-} -ArgumentList $root
-
-# Wait for server to start
-Write-Host "      Waiting for server to initialize..." -ForegroundColor Gray
-Start-Sleep -Seconds 3
-
-# Check if server is running
-$serverReady = $false
-for ($i = 0; $i -lt 10; $i++) {
-    try {
-        $response = Invoke-WebRequest -Uri http://localhost:5000 -UseBasicParsing -TimeoutSec 2 -ErrorAction SilentlyContinue
-        if ($response.StatusCode -eq 200) {
-            $serverReady = $true
-            break
-        }
-    } catch {
-        Start-Sleep -Seconds 1
-    }
-}
-
-Write-Host ""
-Write-Host "=====================================================================" -ForegroundColor Green
-Write-Host "                   PROJECT READY TO USE" -ForegroundColor Green
-Write-Host "=====================================================================" -ForegroundColor Green
-Write-Host ""
-Write-Host ">> Server running at http://localhost:5000" -ForegroundColor Green
-Write-Host ""
-Write-Host "Demo Credentials:" -ForegroundColor Cyan
-Write-Host "   - admin / Admin@1234" -ForegroundColor Gray
-Write-Host "   - inspector / Inspect2026!" -ForegroundColor Gray
-Write-Host "   - newsreader / ReadNews!23" -ForegroundColor Gray
-Write-Host ""
-Write-Host "API Documentation:" -ForegroundColor Cyan
-Write-Host "   - Main: http://localhost:5000/api/" -ForegroundColor Gray
-Write-Host "   - Health: http://localhost:5000/api/health" -ForegroundColor Gray
-Write-Host ""
-
-# Open browser automatically
-Write-Host ">> Opening browser..." -ForegroundColor Yellow
-Start-Sleep -Seconds 1
-Start-Process "http://localhost:5000"
-
-Write-Host ""
-Write-Host "Press CTRL+C to stop the server" -ForegroundColor Yellow
-Write-Host ""
-
-# Keep script running and monitor Flask job
-while ($true) {
-    if ($flaskJob.State -eq "Failed") {
-        Write-Host "Flask server encountered an error. Exiting..." -ForegroundColor Red
+$ready = $false
+for ($i = 0; $i -lt 15; $i++) {
+    Start-Sleep -Seconds 1
+    if (Test-AppReady) {
+        $ready = $true
         break
     }
-    Start-Sleep -Seconds 1
 }
+
+if (-not $ready) {
+    Write-Host "TruthLens did not start successfully." -ForegroundColor Red
+    Write-Host "Process id: $($server.Id)" -ForegroundColor DarkGray
+    exit 1
+}
+
+Write-Host ""
+Write-Host "TruthLens is running." -ForegroundColor Green
+Write-Host "App: http://localhost:5000" -ForegroundColor Green
+Write-Host "API docs: http://localhost:5000/api/" -ForegroundColor Green
+Write-Host ""
+Write-Host "Demo accounts:" -ForegroundColor Cyan
+Write-Host "  admin@truthguard.ai / Admin@1234"
+Write-Host "  inspector@truthguard.ai / Inspect2026!"
+Write-Host "  reader@truthguard.ai / ReadNews!23"
+Write-Host ""
+Write-Host "Server PID: $($server.Id)" -ForegroundColor DarkGray
+
+Start-Process 'http://localhost:5000'
